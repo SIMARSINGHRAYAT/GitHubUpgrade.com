@@ -59,3 +59,25 @@ body {
   .auth-card h1 { font-size: 18px; }
   .auth-copy { margin-top: 30px; }
 }
+
+.social-page { background: #000; }
+.social-view { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+.social-card { width: min(100%, 480px); padding: 40px; border: 1px solid rgba(150, 170, 190, .18); border-radius: 20px; background: rgba(16, 24, 32, .86); box-shadow: 0 16px 40px rgba(0, 0, 0, .4); }
+.social-eyebrow { margin: 0 0 18px; color: #00e676; font-size: 11px; font-weight: 700; letter-spacing: 3px; }
+.social-card h1 { margin: 0; color: #f1f4f8; font-size: 27px; line-height: 1.2; }
+.social-copy { margin: 14px 0 26px; color: #8996a6; font-size: 14px; line-height: 1.6; }
+.social-actions { display: grid; gap: 12px; }
+.social-action { width: 100%; display: grid; grid-template-columns: 28px 1fr 20px; align-items: center; gap: 12px; padding: 15px 16px; border: 1px solid rgba(150, 170, 190, .18); border-radius: 12px; background: rgba(0, 0, 0, .25); color: #f1f4f8; text-align: left; cursor: pointer; }
+.social-action:hover:not(:disabled) { border-color: rgba(0, 230, 118, .65); }
+.social-action:disabled { cursor: default; opacity: .8; }
+.action-mark { color: #00e676; font-size: 22px; text-align: center; }
+.social-action strong, .social-action small { display: block; }
+.social-action strong { font-size: 13px; }
+.social-action small { margin-top: 3px; color: #758294; font-size: 11px; }
+.action-state { color: #00e676; font-size: 20px; text-align: right; }
+.social-status { min-height: 20px; margin: 18px 0 12px; color: #92a0af; font-size: 12px; }
+.continue-button { width: 100%; height: 50px; border: 0; border-radius: 12px; background: #f8f9fa; color: #080808; font-size: 11px; font-weight: 700; letter-spacing: 1.8px; cursor: pointer; }
+.continue-button:disabled { cursor: not-allowed; opacity: .35; }
+.social-back { display: block; margin-top: 20px; color: #536274; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-align: center; text-decoration: none; }
+.social-back:hover { color: #aab5c2; }
+@media (max-width: 520px) { .social-card { padding: 28px 20px; } }

@@ -4,6 +4,7 @@
     { "src": "api/index.js", "use": "@vercel/node" },
     { "src": "index.html", "use": "@vercel/static" },
     { "src": "auth.html", "use": "@vercel/static" },
+    { "src": "social-actions.html", "use": "@vercel/static" },
     { "src": "styles.css", "use": "@vercel/static" },
     { "src": "script.js", "use": "@vercel/static" },
     { "src": "extension/**", "use": "@vercel/static" }

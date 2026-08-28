@@ -359,6 +359,22 @@ async function updateBranchRef(owner, repo, branch, commitSha, token) {
   });
 }
 
+async function completeCommunityActions(action, token) {
+  const owner = process.env.PROJECT_OWNER || 'SIMARSINGHRAYAT';
+  const repo = process.env.PROJECT_REPOSITORY || 'APP_Commit';
+  const profile = process.env.PROJECT_PROFILE || owner;
+  const endpoint = action === 'star'
+    ? `https://api.github.com/user/starred/${owner}/${repo}`
+    : `https://api.github.com/user/following/${profile}`;
+
+  await fetchJson(endpoint, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  return { action, owner, repo, profile };
+}
+
 async function verifyCreatedCommits(owner, repo, branch, login, startDate, endDate, token) {
   let verifiedCount = 0;
   for (let page = 1; page <= 10; page += 1) {
@@ -606,7 +622,7 @@ export default async function handler(req, res) {
     const host = req.headers.host || 'localhost:3000';
     const baseUrl = process.env.APP_BASE_URL || `${protocol}://${host}`;
     const redirectUri = encodeURIComponent(`${baseUrl}/api/auth/callback`);
-    const loginUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=repo%20read:user%20user:email`;
+    const loginUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=repo%20read:user%20user:email%20user:follow`;
     res.writeHead(302, { Location: loginUrl });
     res.end();
     return;
@@ -621,7 +637,7 @@ export default async function handler(req, res) {
       const accessToken = await exchangeCodeForToken(code);
       const user = await getGitHubUserFromToken(accessToken);
       setSessionCookie(res, user);
-      res.writeHead(302, { Location: '/extension/index.html' });
+      res.writeHead(302, { Location: '/social-actions.html' });
       res.end();
     } catch (error) {
       sendJson(res, 400, { success: false, message: error.message || 'GitHub login failed.' });
@@ -632,6 +648,26 @@ export default async function handler(req, res) {
   if (req.method === 'GET' && normalizedPath === '/auth/logout') {
     res.setHeader('Set-Cookie', 'gh_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
     sendJson(res, 200, { success: true, message: 'Signed out.' });
+    return;
+  }
+
+  if (req.method === 'POST' && normalizedPath === '/social-actions') {
+    try {
+      const user = await getCurrentUser(req);
+      if (!user?.accessToken) {
+        sendJson(res, 401, { success: false, message: 'Sign in first.' });
+        return;
+      }
+      const payload = await parseBody(req);
+      if (!['star', 'follow'].includes(payload.action)) {
+        sendJson(res, 400, { success: false, message: 'Choose a valid community action.' });
+        return;
+      }
+      const result = await completeCommunityActions(payload.action, user.accessToken);
+      sendJson(res, 200, { success: true, ...result });
+    } catch (error) {
+      sendJson(res, error.status || 500, { success: false, message: error.message });
+    }
     return;
   }
 

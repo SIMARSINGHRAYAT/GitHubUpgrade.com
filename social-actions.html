@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>One More Step | GitHubUpgrade.com</title>
+    <link rel="stylesheet" href="/styles.css?v=3" />
+  </head>
+  <body class="social-page">
+    <main class="social-view">
+      <section class="social-card" aria-labelledby="social-heading">
+        <p class="social-eyebrow">GITHUBUPGRADE.COM</p>
+        <h1 id="social-heading">Support the project</h1>
+        <p class="social-copy">Before entering the dashboard, choose whether you want to support the open-source project. Each action opens through your signed-in GitHub account.</p>
+        <div class="social-actions">
+          <button class="social-action" type="button" data-action="star"><span class="action-mark">&#9733;</span><span><strong>Star the repository</strong><small id="starStatus">Optional project support</small></span><span class="action-state" aria-hidden="true">+</span></button>
+          <button class="social-action" type="button" data-action="follow"><span class="action-mark">@</span><span><strong>Follow the maintainer</strong><small id="followStatus">Optional profile support</small></span><span class="action-state" aria-hidden="true">+</span></button>
+        </div>
+        <p id="socialStatus" class="social-status" aria-live="polite"></p>
+        <button id="continueBtn" class="continue-button" type="button" disabled>CONTINUE TO DASHBOARD</button>
+        <a class="social-back" href="/auth.html">BACK TO SIGN IN</a>
+      </section>
+    </main>
+    <script>
+      const completed = new Set();
+      const status = document.getElementById('socialStatus');
+      const continueButton = document.getElementById('continueBtn');
+      const labels = { star: 'starStatus', follow: 'followStatus' };
+      document.querySelectorAll('.social-action').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const action = button.dataset.action;
+          if (completed.has(action)) return;
+          button.disabled = true;
+          status.textContent = 'Updating your GitHub account...';
+          try {
+            const response = await fetch('/api/social-actions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }), credentials: 'include' });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || 'GitHub could not complete this action.');
+            completed.add(action);
+            document.getElementById(labels[action]).textContent = 'Completed on GitHub';
+            button.classList.add('completed');
+            button.querySelector('.action-state').textContent = '✓';
+            status.textContent = completed.size === 2 ? 'Both actions are complete.' : 'One action is complete. Choose the other to continue.';
+            continueButton.disabled = completed.size !== 2;
+          } catch (error) {
+            button.disabled = false;
+            status.textContent = error.message;
+          }
+        });
+      });
+      continueButton.addEventListener('click', () => { window.location.href = '/extension/index.html'; });
+    </script>
+  </body>
+</html>
