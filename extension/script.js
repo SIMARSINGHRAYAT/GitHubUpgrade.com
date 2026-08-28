@@ -265,6 +265,9 @@ function renderSuccess(data) {
   resultBox.classList.remove('hidden');
   resultBox.className = 'result result-success';
   const pushNote = data.pushResult?.message || '';
+  const verificationNote = data.verifiedCommits === null || data.verifiedCommits === undefined
+    ? ''
+    : ` GitHub verified ${data.verifiedCommits} matching commit(s); contribution graphs can take time to refresh.`;
   resultBox.innerHTML = `
     <div class="result-icon"><i class="ph-bold ph-check"></i></div>
     <div class="result-body">
@@ -277,7 +280,7 @@ function renderSuccess(data) {
         <div class="stat"><span class="stat-label">Days</span><span class="stat-value">${data.selectedDays}</span></div>
         <div class="stat"><span class="stat-label">Pushed</span><span class="stat-value">${data.pushToRemote ? 'Yes' : 'Dry-run'}</span></div>
       </div>
-      <p class="result-note"><i class="ph-bold ph-info"></i> ${escapeHtml(pushNote)}</p>
+      <p class="result-note"><i class="ph-bold ph-info"></i> ${escapeHtml(pushNote + verificationNote)}</p>
     </div>
   `;
 }

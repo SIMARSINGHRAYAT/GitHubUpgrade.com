@@ -105,21 +105,20 @@ async function getGitHubUserFromToken(accessToken) {
   });
 
   const userId = user.id;
-  let email = user.email || null;
-  if (!email) {
-    try {
-      const emailList = await fetchJson('https://api.github.com/user/emails', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      const primary = Array.isArray(emailList)
-        ? emailList.find((entry) => entry.primary && entry.verified) || emailList.find((entry) => entry.verified)
-        : null;
-      email = primary ? primary.email : null;
-    } catch (e) {
-      // user:email scope might not be available, that's ok
-      email = null;
-    }
+  let email = null;
+  try {
+    const emailList = await fetchJson('https://api.github.com/user/emails', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const primary = Array.isArray(emailList)
+      ? emailList.find((entry) => entry.primary && entry.verified) || emailList.find((entry) => entry.verified)
+      : null;
+    email = primary ? primary.email : null;
+  } catch (e) {
+    email = null;
   }
+
+  email = email || user.email || null;
 
   // If we still don't have an email, use the GitHub ID-based noreply format
   // This is CRITICAL for the contribution graph to work
@@ -360,6 +359,27 @@ async function updateBranchRef(owner, repo, branch, commitSha, token) {
   });
 }
 
+async function verifyCreatedCommits(owner, repo, branch, login, startDate, endDate, token) {
+  let verifiedCount = 0;
+  for (let page = 1; page <= 10; page += 1) {
+    const params = new URLSearchParams({
+      sha: branch,
+      author: login,
+      since: `${startDate}T00:00:00Z`,
+      until: `${endDate}T23:59:59Z`,
+      per_page: '100',
+      page: String(page),
+    });
+    const commits = await fetchJson(`https://api.github.com/repos/${owner}/${repo}/commits?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!Array.isArray(commits)) break;
+    verifiedCount += commits.length;
+    if (commits.length < 100) break;
+  }
+  return verifiedCount;
+}
+
 // ─── Core commit generation ─────────────────────────────────────────────────
 
 async function generateCommits(payload, req) {
@@ -487,6 +507,11 @@ async function generateCommits(payload, req) {
     await updateBranchRef(repoOwner, repoName, branchName, currentCommitSha, token);
   }
 
+  let verifiedCommits = null;
+  if (pushToRemote && totalCount > 0) {
+    verifiedCommits = await verifyCreatedCommits(repoOwner, repoName, branchName, user.login, startDate, endDate, token);
+  }
+
   return {
     success: true,
     branch: branchName,
@@ -501,9 +526,10 @@ async function generateCommits(payload, req) {
       enabled: pushToRemote,
       status: pushToRemote ? 'success' : 'skipped',
       message: pushToRemote
-        ? `${totalCount} commit(s) successfully created on ${repoOwner}/${repoName} (${branchName}).`
+        ? `${totalCount} commit(s) successfully created on ${repoOwner}/${repoName} (${branchName}). GitHub API verified ${verifiedCommits} matching commit(s).`
         : 'Dry-run mode — no commits were pushed to GitHub. Enable "Push to remote" to create real commits.',
     },
+    verifiedCommits,
     created,
   };
 }
