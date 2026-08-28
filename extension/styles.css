@@ -756,6 +756,52 @@ input:checked + .slider:before {
   color: var(--text-muted);
 }
 
+.contribution-preview {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+}
+
+.preview-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.contribution-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.contribution-day {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: rgba(57, 255, 20, calc(0.18 + var(--day-level) * 0.18));
+  box-shadow: 0 0 6px rgba(57, 255, 20, calc(var(--day-level) * 0.06));
+}
+
+.result-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.result-links a {
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.result-links a:hover { text-decoration: underline; }
+
 .hidden {
   display: none !important;
 }

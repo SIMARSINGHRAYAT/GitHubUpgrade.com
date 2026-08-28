@@ -268,6 +268,15 @@ function renderSuccess(data) {
   const verificationNote = data.verifiedCommits === null || data.verifiedCommits === undefined
     ? ''
     : ` GitHub verified ${data.verifiedCommits} matching commit(s); contribution graphs can take time to refresh.`;
+  const contributionCounts = data.created.reduce((counts, commit) => {
+    counts[commit.date] = (counts[commit.date] || 0) + 1;
+    return counts;
+  }, {});
+  const contributionPreview = Object.entries(contributionCounts)
+    .map(([date, count]) => `<span class="contribution-day" title="${escapeHtml(date)}: ${count} commit(s)" style="--day-level: ${Math.min(4, Math.ceil(count / 3))}"></span>`)
+    .join('');
+  const profileUrl = `https://github.com/${encodeURIComponent(data.repoOwner)}`;
+  const repoUrl = `https://github.com/${encodeURIComponent(data.repoOwner)}/${encodeURIComponent(data.repoName)}`;
   resultBox.innerHTML = `
     <div class="result-icon"><i class="ph-bold ph-check"></i></div>
     <div class="result-body">
@@ -279,6 +288,14 @@ function renderSuccess(data) {
         <div class="stat"><span class="stat-label">Date range</span><span class="stat-value">${escapeHtml(data.startDate)} → ${escapeHtml(data.endDate)}</span></div>
         <div class="stat"><span class="stat-label">Days</span><span class="stat-value">${data.selectedDays}</span></div>
         <div class="stat"><span class="stat-label">Pushed</span><span class="stat-value">${data.pushToRemote ? 'Yes' : 'Dry-run'}</span></div>
+      </div>
+      <div class="contribution-preview" aria-label="Generated contribution preview">
+        <span class="preview-label">Contribution preview</span>
+        <div class="contribution-days">${contributionPreview}</div>
+      </div>
+      <div class="result-links">
+        <a href="${repoUrl}" target="_blank" rel="noopener">View repository</a>
+        <a href="${profileUrl}" target="_blank" rel="noopener">View GitHub profile</a>
       </div>
       <p class="result-note"><i class="ph-bold ph-info"></i> ${escapeHtml(pushNote + verificationNote)}</p>
     </div>
