@@ -35,6 +35,7 @@ let userRepos = [];
 function setSignedOutState(message) {
   currentUser = null;
   userRepos = [];
+  document.body.classList.remove('dashboard-ready');
   signOutBtn.style.display = 'none';
   authPanel.classList.remove('hidden');
   schedulerPanel.classList.add('hidden');
@@ -48,6 +49,7 @@ function setSignedOutState(message) {
 function setSignedInState(user) {
   currentUser = user;
   signOutBtn.style.display = 'inline-flex';
+  document.body.classList.add('dashboard-ready');
   authPanel.classList.add('hidden');
   schedulerPanel.classList.remove('hidden');
   userSummary.textContent = user.login || 'GitHub account';

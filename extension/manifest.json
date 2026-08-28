@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "CommitFlow",
+  "name": "GitHubUpgrade",
   "version": "1.0",
-  "description": "Professional GitHub commit scheduler and contribution graph automation.",
+  "description": "GitHub contribution scheduler and automation tool.",
   "action": {
     "default_popup": "index.html",
-    "default_title": "Open CommitFlow"
+    "default_title": "Open GitHubUpgrade"
   },
   "host_permissions": [
     "https://app-commit-ten.vercel.app/*",

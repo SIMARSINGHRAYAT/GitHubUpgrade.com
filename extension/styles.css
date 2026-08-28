@@ -1,10 +1,10 @@
 :root {
-  --bg-base: #030508;
+  --bg-base: #000000;
   --bg-panel: rgba(8, 14, 22, 0.7);
   --bg-input: rgba(12, 19, 31, 0.9);
   
-  --primary: #00f0ff;
-  --primary-glow: rgba(0, 240, 255, 0.5);
+  --primary: #00e676;
+  --primary-glow: rgba(0, 230, 118, 0.28);
   
   --secondary: #b026ff;
   --secondary-glow: rgba(176, 38, 255, 0.5);
@@ -18,8 +18,8 @@
   --danger: #ff0055;
   --danger-glow: rgba(255, 0, 85, 0.4);
   
-  --border-light: rgba(0, 240, 255, 0.15);
-  --border-focus: rgba(0, 240, 255, 0.5);
+  --border-light: rgba(0, 230, 118, 0.22);
+  --border-focus: rgba(0, 230, 118, 0.55);
   
   --font-display: 'Outfit', sans-serif;
   --font-body: 'Inter', sans-serif;
@@ -47,9 +47,7 @@ body {
 .grid-overlay {
   position: fixed;
   inset: 0;
-  background-image: 
-    linear-gradient(to right, rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+  background-image: none;
   background-size: 40px 40px;
   z-index: -1;
   pointer-events: none;
@@ -67,7 +65,7 @@ body {
 .orb-primary {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, var(--primary-glow), transparent 70%);
+  background: none;
   top: -100px;
   left: -100px;
 }
@@ -75,7 +73,7 @@ body {
 .orb-secondary {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, var(--secondary-glow), transparent 70%);
+  background: none;
   bottom: -150px;
   right: -100px;
 }
@@ -83,7 +81,7 @@ body {
 .orb-accent {
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+  background: none;
   top: 40%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -91,11 +89,25 @@ body {
 }
 
 .page-shell {
-  max-width: 1080px;
+  max-width: none;
   margin: 0 auto;
   padding: 30px 20px 60px;
   position: relative;
   z-index: 1;
+}
+
+body.dashboard-ready .page-shell {
+  width: 100%;
+  padding: 24px 28px 48px;
+}
+
+body.dashboard-ready .app-grid {
+  display: block;
+}
+
+body.dashboard-ready .scheduler-panel {
+  width: 100%;
+  min-height: calc(100vh - 146px);
 }
 
 /* Glass Panels */
@@ -128,7 +140,7 @@ body {
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background: var(--primary);
   color: var(--bg-base);
   font-size: 1.5rem;
   box-shadow: 0 0 20px var(--primary-glow);
@@ -139,7 +151,8 @@ body {
   font-size: 1.3rem;
   font-weight: 900;
   letter-spacing: 0.02em;
-  background: linear-gradient(90deg, var(--text-main), var(--primary));
+  color: var(--text-main);
+  background: none;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -200,7 +213,7 @@ button {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.4), transparent);
+  background: rgba(255, 255, 255, 0.12);
   transition: left 0.5s ease;
 }
 
@@ -657,6 +670,12 @@ input:checked + .slider:before {
 .result-success {
   border-color: var(--accent);
   box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.result-success .stat-value,
+.result-success .result-body strong,
+.result-success .result-note {
+  color: var(--accent);
 }
 
 .result-error {

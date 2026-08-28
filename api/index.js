@@ -62,7 +62,7 @@ async function fetchJson(url, init = {}) {
     ...init,
     headers: {
       Accept: 'application/json',
-      'User-Agent': 'CommitFlow',
+      'User-Agent': 'GitHubUpgrade',
       ...(init.headers || {}),
     },
   });
