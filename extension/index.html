@@ -29,11 +29,8 @@
     <div class="page-shell">
       <header class="topbar glass-panel">
         <div class="brand-wrap">
-          <div class="brand-mark">
-            <i class="ph-bold ph-git-merge"></i>
-          </div>
           <div>
-            <div class="brand-name">GitHubUpgrade</div>
+            <div class="brand-name">GitHubUpgrade.com</div>
             <div class="brand-subtitle">GitHub Contribution Scheduler</div>
           </div>
         </div>
@@ -123,23 +120,18 @@
               </label>
             </div>
 
-            <div class="field-group-title"><i class="ph-bold ph-chart-bar"></i> Volume</div>
-            <div class="field-grid two-col">
-              <label>
-                Daily commits
-                <div class="input-wrap">
-                  <i class="ph ph-hash"></i>
-                  <input type="number" id="dailyCount" min="1" step="1" value="5" required />
-                </div>
-              </label>
-
-              <label>
-                Max random commits per day
-                <div class="input-wrap">
-                  <i class="ph ph-dice-five"></i>
-                  <input type="number" id="maxPerDay" min="1" step="1" value="5" />
-                </div>
-              </label>
+            <div class="field-group-title"><i class="ph-bold ph-faders"></i> Custom Weekday Counts</div>
+            <div class="inner-panel">
+              <label class="compact-label">Commits generated for each weekday</label>
+              <div class="day-grid compact-inputs">
+                <div class="mini-input-group"><span>Mon</span><input type="number" min="0" step="1" value="5" data-weekday="monday" /></div>
+                <div class="mini-input-group"><span>Tue</span><input type="number" min="0" step="1" value="5" data-weekday="tuesday" /></div>
+                <div class="mini-input-group"><span>Wed</span><input type="number" min="0" step="1" value="5" data-weekday="wednesday" /></div>
+                <div class="mini-input-group"><span>Thu</span><input type="number" min="0" step="1" value="5" data-weekday="thursday" /></div>
+                <div class="mini-input-group"><span>Fri</span><input type="number" min="0" step="1" value="5" data-weekday="friday" /></div>
+                <div class="mini-input-group"><span>Sat</span><input type="number" min="0" step="1" value="5" data-weekday="saturday" /></div>
+                <div class="mini-input-group"><span>Sun</span><input type="number" min="0" step="1" value="5" data-weekday="sunday" /></div>
+              </div>
             </div>
 
             <div class="field-group-title"><i class="ph-bold ph-git-branch"></i> Target Repository</div>
@@ -192,40 +184,6 @@
               </div>
             </div>
 
-            <div class="inner-panel">
-              <label class="compact-label">Custom Weekday Counts (Overrides default daily count)</label>
-              <div class="day-grid compact-inputs">
-                <div class="mini-input-group" data-wrapper="monday">
-                  <span>Mon</span>
-                  <input type="number" min="0" step="1" value="5" data-weekday="monday" />
-                </div>
-                <div class="mini-input-group" data-wrapper="tuesday">
-                  <span>Tue</span>
-                  <input type="number" min="0" step="1" value="5" data-weekday="tuesday" />
-                </div>
-                <div class="mini-input-group" data-wrapper="wednesday">
-                  <span>Wed</span>
-                  <input type="number" min="0" step="1" value="5" data-weekday="wednesday" />
-                </div>
-                <div class="mini-input-group" data-wrapper="thursday">
-                  <span>Thu</span>
-                  <input type="number" min="0" step="1" value="5" data-weekday="thursday" />
-                </div>
-                <div class="mini-input-group" data-wrapper="friday">
-                  <span>Fri</span>
-                  <input type="number" min="0" step="1" value="5" data-weekday="friday" />
-                </div>
-                <div class="mini-input-group" data-wrapper="saturday">
-                  <span>Sat</span>
-                  <input type="number" min="0" step="1" value="5" data-weekday="saturday" />
-                </div>
-                <div class="mini-input-group" data-wrapper="sunday">
-                  <span>Sun</span>
-                  <input type="number" min="0" step="1" value="5" data-weekday="sunday" />
-                </div>
-              </div>
-            </div>
-
             <div class="field-group-title"><i class="ph-bold ph-rocket-launch"></i> Execution Details</div>
 
             <div class="split-controls">
@@ -272,6 +230,6 @@
       </footer>
     </div>
 
-    <script src="/extension/script.js"></script>
+    <script src="/extension/script.js?v=2"></script>
   </body>
 </html>

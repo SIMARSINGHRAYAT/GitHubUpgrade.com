@@ -246,14 +246,12 @@ function resolveDailyCount(date, payload) {
   const weekdayKey = getDayName(safeDate);
   const baseCount = Number(payload.dailyCount || 1);
 
-  if (weekdayMap[weekdayKey] !== undefined && Number(weekdayMap[weekdayKey]) >= 0) {
-    return Number(weekdayMap[weekdayKey]);
+  if (payload.randomize) {
+    return Math.floor(Math.random() * 10) + 1;
   }
 
-  if (payload.randomize) {
-    const max = Number(payload.maxPerDay || baseCount || 1);
-    const min = Math.min(1, max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+  if (weekdayMap[weekdayKey] !== undefined && Number(weekdayMap[weekdayKey]) >= 0) {
+    return Number(weekdayMap[weekdayKey]);
   }
 
   return baseCount;
@@ -376,7 +374,6 @@ async function generateCommits(payload, req) {
 
   const startDate = payload.startDate;
   const endDate = payload.endDate;
-  const dailyCount = Number(payload.dailyCount || 1);
   const pushToRemote = Boolean(payload.pushToRemote);
   const branchName = (payload.branch || 'main').toString().trim() || 'main';
   const repoOwner = payload.repoOwner?.trim() || user.repoOwner || user.login;
@@ -389,10 +386,6 @@ async function generateCommits(payload, req) {
 
   if (!startDate || !endDate) {
     throw new Error('Please choose a valid start date and end date.');
-  }
-
-  if (!Number.isInteger(dailyCount) || dailyCount < 1) {
-    throw new Error('Daily commit count must be a whole number greater than zero.');
   }
 
   // ── Validate repo & branch before starting ────────────────────────────

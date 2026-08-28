@@ -551,9 +551,14 @@ input:focus, select:focus {
 
 .mini-input-group span {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--accent);
   text-align: center;
   font-weight: 600;
+}
+
+.compact-inputs input {
+  color: var(--accent);
+  border-color: rgba(57, 255, 20, 0.35);
 }
 
 .mini-input-group input {

@@ -28,6 +28,7 @@ const selectedDaysPanel = document.getElementById("selectedDays");
 const repoOwnerInput = document.getElementById("repoOwner");
 const repoNameInput = document.getElementById("repoName");
 const submitBtn = form.querySelector("button[type='submit']");
+const randomizeInput = document.getElementById('randomize');
 
 let currentUser = null;
 let userRepos = [];
@@ -165,6 +166,15 @@ if (filterMode) {
   filterMode.addEventListener('change', () => {
     selectedDaysPanel.classList.toggle('hidden', filterMode.value !== 'selected');
     updateWeekdayInputsState();
+  });
+}
+
+if (randomizeInput) {
+  randomizeInput.addEventListener('change', () => {
+    if (!randomizeInput.checked) return;
+    document.querySelectorAll('[data-weekday]').forEach((input) => {
+      input.value = Math.floor(Math.random() * 10) + 1;
+    });
   });
 }
 
@@ -320,9 +330,7 @@ form.addEventListener('submit', async (event) => {
   const payload = {
     startDate: document.getElementById("startDate").value,
     endDate: document.getElementById("endDate").value,
-    dailyCount: Number(document.getElementById("dailyCount").value || 1),
-    maxPerDay: Number(document.getElementById("maxPerDay").value || 1),
-    randomize: document.getElementById("randomize").checked,
+    randomize: randomizeInput.checked,
     filterMode: filterMode.value,
     selectedDays,
     weekdayCounts,
@@ -362,7 +370,8 @@ form.addEventListener('submit', async (event) => {
   const start = new Date(payload.startDate);
   const end = new Date(payload.endDate);
   const differenceDays = Math.max(1, Math.ceil((end - start) / 86400000) + 1);
-  const estimatedTotal = Math.max(1, Math.round((payload.dailyCount || 1) * differenceDays));
+  const averageDailyCount = Object.values(weekdayCounts).reduce((total, count) => total + count, 0) / 7;
+  const estimatedTotal = Math.max(1, Math.round(averageDailyCount * differenceDays));
   const startedAt = Date.now();
   let completed = 0;
 
