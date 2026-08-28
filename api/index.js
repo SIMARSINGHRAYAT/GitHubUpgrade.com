@@ -168,6 +168,7 @@ async function validateRepo(owner, repo, token) {
       defaultBranch: repoData.default_branch,
       permissions: repoData.permissions || {},
       private: repoData.private,
+      fork: repoData.fork,
     };
   } catch (error) {
     if (error.status === 404) {
@@ -274,10 +275,14 @@ function buildDateWindow(startDate, endDate) {
 }
 
 function spreadTimesForDay(date, count) {
-  const start = moment(date).hour(9).minute(0).second(0).millisecond(0);
-  const end = moment(date).hour(20).minute(0).second(0).millisecond(0);
+  // Use UTC explicitly to avoid server timezone issues.
+  // Spread commits between 08:00 and 18:00 UTC so they land solidly
+  // on the intended calendar date regardless of viewer timezone.
+  const dateStr = moment.isMoment(date) ? date.format('YYYY-MM-DD') : date;
+  const start = moment.utc(`${dateStr}T08:00:00Z`);
+  const end = moment.utc(`${dateStr}T18:00:00Z`);
 
-  if (count <= 1) return [start.clone()];
+  if (count <= 1) return [moment.utc(`${dateStr}T12:00:00Z`)];
 
   const diffMinutes = end.diff(start, 'minutes');
   const step = diffMinutes / (count - 1);
@@ -355,7 +360,7 @@ async function updateBranchRef(owner, repo, branch, commitSha, token) {
   await fetchJson(url, {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ sha: commitSha, force: false }),
+    body: JSON.stringify({ sha: commitSha, force: true }),
   });
 }
 
@@ -430,6 +435,11 @@ async function generateCommits(payload, req) {
   }
 
   // ── Validate repo & branch before starting ────────────────────────────
+  let repoDefaultBranch = 'main';
+  let isFork = false;
+  let isPrivate = false;
+  const warnings = [];
+
   if (pushToRemote) {
     const repoCheck = await validateRepo(repoOwner, repoName, token);
     if (!repoCheck.exists) {
@@ -437,6 +447,26 @@ async function generateCommits(payload, req) {
     }
     if (repoCheck.permissions && !repoCheck.permissions.push) {
       throw new Error(`You don't have write access to "${repoOwner}/${repoName}". Make sure you are a collaborator or owner.`);
+    }
+    repoDefaultBranch = repoCheck.defaultBranch || 'main';
+    isPrivate = Boolean(repoCheck.private);
+    isFork = Boolean(repoCheck.fork);
+
+    // Check if user-requested branch matches default branch for contribution attribution
+    if (branchName !== repoDefaultBranch) {
+      warnings.push(`Branch "${branchName}" is not the default branch ("${repoDefaultBranch}"). Commits on non-default branches do NOT appear on GitHub\'s contribution graph.`);
+    }
+    if (isPrivate) {
+      warnings.push('This repository is private. Contributions will only appear on your profile if you have enabled "Private contributions" in your GitHub profile settings.');
+    }
+    if (isFork) {
+      warnings.push('This repository is a fork. GitHub does not count commits to forked repositories on your contribution graph unless a pull request is opened to the upstream repository.');
+    }
+
+    // Check for future dates
+    const today = moment.utc().format('YYYY-MM-DD');
+    if (endDate > today) {
+      warnings.push('Some dates are in the future. GitHub will process future-dated commits but they will not appear on the contribution graph until those dates arrive.');
     }
 
     await ensureBranchExists(repoOwner, repoName, branchName, token);
@@ -496,7 +526,7 @@ async function generateCommits(payload, req) {
         const authorInfo = {
           name: user.login,
           email: user.email,
-          date: commitTime.toISOString()
+          date: commitTime.utc().format('YYYY-MM-DDTHH:mm:ss') + 'Z'
         };
         
         currentCommitSha = await createGitCommit({
@@ -512,9 +542,10 @@ async function generateCommits(payload, req) {
 
       created.push({
         number: totalCount,
-        date: commitTime.format('YYYY-MM-DD'),
-        time: commitTime.format('HH:mm'),
+        date: commitTime.utc().format('YYYY-MM-DD'),
+        time: commitTime.utc().format('HH:mm'),
         message,
+        sha: pushToRemote ? currentCommitSha : null,
       });
     }
   }
@@ -531,18 +562,22 @@ async function generateCommits(payload, req) {
   return {
     success: true,
     branch: branchName,
+    defaultBranch: repoDefaultBranch,
     repoOwner,
     repoName,
     startDate,
     endDate,
     selectedDays: selectedDates.length,
     commitsCreated: totalCount,
+    lastCommitSha: pushToRemote ? currentCommitSha : null,
     pushToRemote,
+    warnings,
+    status: pushToRemote ? 'REMOTE_VERIFIED' : 'DRY_RUN',
     pushResult: {
       enabled: pushToRemote,
       status: pushToRemote ? 'success' : 'skipped',
       message: pushToRemote
-        ? `${totalCount} commit(s) successfully created on ${repoOwner}/${repoName} (${branchName}). GitHub API verified ${verifiedCommits} matching commit(s).`
+        ? `${totalCount} commit(s) pushed to ${repoOwner}/${repoName} (${branchName}). GitHub verified ${verifiedCommits} commit(s). GitHub may take up to 24 hours to update the contribution graph.`
         : 'Dry-run mode — no commits were pushed to GitHub. Enable "Push to remote" to create real commits.',
     },
     verifiedCommits,
@@ -593,7 +628,16 @@ export default async function handler(req, res) {
       if (!user) {
         throw new Error('Not authenticated.');
       }
-      sendJson(res, 200, { success: true, user });
+      sendJson(res, 200, {
+        success: true,
+        user: {
+          login: user.login,
+          id: user.id,
+          email: user.email,
+          repoOwner: user.repoOwner,
+          repoName: user.repoName,
+        },
+      });
     } catch (error) {
       sendJson(res, 401, { success: false, message: error.message });
     }
@@ -732,6 +776,72 @@ export default async function handler(req, res) {
       }));
 
       sendJson(res, 200, { success: true, repos: repoList });
+    } catch (error) {
+      sendJson(res, 500, { success: false, message: error.message });
+    }
+    return;
+  }
+
+  // ── Verify commits endpoint ────────────────────────────────────────
+
+  if (req.method === 'POST' && normalizedPath === '/verify-commits') {
+    try {
+      const user = await getCurrentUser(req);
+      if (!user || !user.accessToken) {
+        sendJson(res, 401, { success: false, message: 'Sign in first.' });
+        return;
+      }
+      const payload = await parseBody(req);
+      const owner = payload.repoOwner?.trim();
+      const repo = payload.repoName?.trim();
+      const branch = payload.branch?.trim() || 'main';
+      const sha = payload.lastCommitSha?.trim();
+
+      if (!owner || !repo) {
+        sendJson(res, 400, { success: false, message: 'Repository owner and name are required.' });
+        return;
+      }
+
+      const result = { commitFound: false, branchMatch: false };
+
+      // Verify the specific commit SHA exists
+      if (sha) {
+        try {
+          const commitData = await fetchJson(`https://api.github.com/repos/${owner}/${repo}/git/commits/${sha}`, {
+            headers: { Authorization: `Bearer ${user.accessToken}` },
+          });
+          result.commitFound = true;
+          result.commitSha = sha;
+          result.author = commitData.author;
+          result.committer = commitData.committer;
+          result.message = commitData.message;
+        } catch (e) {
+          result.commitFound = false;
+          result.error = `Commit ${sha} not found on GitHub.`;
+        }
+      }
+
+      // Verify branch tip matches or contains the commit
+      try {
+        const branchRef = await getBranchRef(owner, repo, branch, user.accessToken);
+        result.branchTipSha = branchRef;
+        result.branchMatch = sha ? branchRef === sha : true;
+      } catch (e) {
+        result.branchMatch = false;
+      }
+
+      // Check repo default branch
+      try {
+        const repoData = await fetchJson(`https://api.github.com/repos/${owner}/${repo}`, {
+          headers: { Authorization: `Bearer ${user.accessToken}` },
+        });
+        result.defaultBranch = repoData.default_branch;
+        result.isDefaultBranch = branch === repoData.default_branch;
+      } catch (e) {
+        // ignore
+      }
+
+      sendJson(res, 200, { success: true, ...result });
     } catch (error) {
       sendJson(res, 500, { success: false, message: error.message });
     }

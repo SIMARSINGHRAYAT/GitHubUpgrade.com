@@ -261,14 +261,70 @@ function renderError(message) {
   `;
 }
 
+window.verifyCommits = async function(owner, repo, branch, sha) {
+  const verifyBtn = document.getElementById('verifyBtn');
+  const verifyResult = document.getElementById('verifyResult');
+  if (verifyBtn) {
+    verifyBtn.disabled = true;
+    verifyBtn.innerHTML = '<i class="ph-bold ph-spinner" style="animation: spin 1s linear infinite;"></i> Verifying...';
+  }
+  
+  try {
+    const res = await fetch('/api/verify-commits', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repoOwner: owner, repoName: repo, branch, lastCommitSha: sha })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || 'Verification failed');
+    
+    let html = `<div class="verify-status ${data.commitFound ? 'success' : 'pending'}">`;
+    if (data.commitFound) {
+      html += `<strong><i class="ph-bold ph-check-circle"></i> Commit Verified on GitHub</strong>`;
+      html += `<p>Commit <code>${data.commitSha.substring(0,7)}</code> exists remotely.</p>`;
+    } else {
+      html += `<strong><i class="ph-bold ph-clock"></i> Awaiting GitHub Processing</strong>`;
+      html += `<p>${data.error || 'Commit not found yet.'}</p>`;
+    }
+    
+    if (data.isDefaultBranch) {
+      html += `<p class="branch-status success"><i class="ph-bold ph-check"></i> On default branch (${escapeHtml(data.defaultBranch)})</p>`;
+    } else if (data.defaultBranch) {
+      html += `<p class="branch-status warning"><i class="ph-bold ph-warning"></i> On non-default branch. GitHub requires commits on the default branch for contributions.</p>`;
+    }
+    html += `</div>`;
+    verifyResult.innerHTML = html;
+  } catch (err) {
+    verifyResult.innerHTML = `<div class="verify-status error"><i class="ph-bold ph-warning"></i> ${escapeHtml(err.message)}</div>`;
+  } finally {
+    if (verifyBtn) {
+      verifyBtn.disabled = false;
+      verifyBtn.innerHTML = '<i class="ph-bold ph-arrows-clockwise"></i> Verify again';
+    }
+  }
+};
+
 function renderSuccess(data) {
-  localStorage.setItem('githubUpgradeLastResult', JSON.stringify(data));
+  // Store metadata but NOT the fake contribution graph state as proof of success
+  localStorage.setItem('githubUpgradeLastPayload', JSON.stringify({
+    repoOwner: data.repoOwner,
+    repoName: data.repoName,
+    branch: data.branch,
+    startDate: data.startDate,
+    endDate: data.endDate,
+    lastCommitSha: data.lastCommitSha,
+    pushToRemote: data.pushToRemote
+  }));
+  
   resultBox.classList.remove('hidden');
   resultBox.className = 'result result-success';
   const pushNote = data.pushResult?.message || '';
-  const verificationNote = data.verifiedCommits === null || data.verifiedCommits === undefined
-    ? ''
-    : ` GitHub verified ${data.verifiedCommits} matching commit(s); contribution graphs can take time to refresh.`;
+  
+  // Render warnings if any
+  const warningsHtml = (data.warnings && data.warnings.length > 0) 
+    ? `<div class="result-warnings">${data.warnings.map(w => `<p><i class="ph-bold ph-warning"></i> ${escapeHtml(w)}</p>`).join('')}</div>`
+    : '';
+
   const contributionCounts = data.created.reduce((counts, commit) => {
     counts[commit.date] = (counts[commit.date] || 0) + 1;
     return counts;
@@ -276,39 +332,65 @@ function renderSuccess(data) {
   const contributionPreview = Object.entries(contributionCounts)
     .map(([date, count]) => `<span class="contribution-day" title="${escapeHtml(date)}: ${count} commit(s)" style="--day-level: ${Math.min(4, Math.ceil(count / 3))}"></span>`)
     .join('');
+    
   const profileUrl = `https://github.com/${encodeURIComponent(data.repoOwner)}`;
   const repoUrl = `https://github.com/${encodeURIComponent(data.repoOwner)}/${encodeURIComponent(data.repoName)}`;
+  
+  let verificationSection = '';
+  if (data.pushToRemote) {
+    verificationSection = `
+      <div class="verification-section">
+        <div id="verifyResult">
+          <p class="pending-notice"><i class="ph-bold ph-clock"></i> Commits Pushed &mdash; Awaiting GitHub Processing</p>
+        </div>
+        <button id="verifyBtn" class="ghost-button" onclick="verifyCommits('${escapeHtml(data.repoOwner)}', '${escapeHtml(data.repoName)}', '${escapeHtml(data.branch)}', '${escapeHtml(data.lastCommitSha || '')}')" type="button">
+          <i class="ph-bold ph-check-square-offset"></i> Verify on GitHub
+        </button>
+      </div>
+    `;
+  }
+
   resultBox.innerHTML = `
     <div class="result-icon"><i class="ph-bold ph-check"></i></div>
     <div class="result-body">
       <strong>Success!</strong>
+      ${warningsHtml}
       <div class="result-stats">
         <div class="stat"><span class="stat-label">Repository</span><span class="stat-value">${escapeHtml(data.repoOwner)}/${escapeHtml(data.repoName)}</span></div>
         <div class="stat"><span class="stat-label">Branch</span><span class="stat-value">${escapeHtml(data.branch)}</span></div>
         <div class="stat"><span class="stat-label">Commits</span><span class="stat-value">${data.commitsCreated}</span></div>
-        <div class="stat"><span class="stat-label">Date range</span><span class="stat-value">${escapeHtml(data.startDate)} → ${escapeHtml(data.endDate)}</span></div>
+        <div class="stat"><span class="stat-label">Date range</span><span class="stat-value">${escapeHtml(data.startDate)} &rarr; ${escapeHtml(data.endDate)}</span></div>
         <div class="stat"><span class="stat-label">Days</span><span class="stat-value">${data.selectedDays}</span></div>
         <div class="stat"><span class="stat-label">Pushed</span><span class="stat-value">${data.pushToRemote ? 'Yes' : 'Dry-run'}</span></div>
       </div>
       <div class="contribution-preview" aria-label="Generated contribution preview">
-        <span class="preview-label">Contribution preview</span>
+        <span class="preview-label">Schedule Preview</span>
         <div class="contribution-days">${contributionPreview}</div>
       </div>
+      ${verificationSection}
       <div class="result-links">
         <a href="${repoUrl}" target="_blank" rel="noopener">View repository</a>
         <a href="${profileUrl}" target="_blank" rel="noopener">View GitHub profile</a>
       </div>
-      <p class="result-note"><i class="ph-bold ph-info"></i> ${escapeHtml(pushNote + verificationNote)}</p>
+      <p class="result-note"><i class="ph-bold ph-info"></i> ${escapeHtml(pushNote)}</p>
     </div>
   `;
 }
 
 function restoreLastResult() {
   try {
-    const savedResult = localStorage.getItem('githubUpgradeLastResult');
-    if (savedResult) renderSuccess(JSON.parse(savedResult));
+    const saved = localStorage.getItem('githubUpgradeLastPayload');
+    if (saved) {
+      const data = JSON.parse(saved);
+      // Pre-fill the form but do NOT fake a success result
+      if (data.repoOwner && repoOwnerInput) repoOwnerInput.value = data.repoOwner;
+      if (data.startDate) document.getElementById('startDate').value = data.startDate;
+      if (data.endDate) document.getElementById('endDate').value = data.endDate;
+      if (data.branch) document.getElementById('branch').value = data.branch;
+      if (data.pushToRemote !== undefined) document.getElementById('pushToRemote').checked = data.pushToRemote;
+    }
   } catch {
-    localStorage.removeItem('githubUpgradeLastResult');
+    localStorage.removeItem('githubUpgradeLastPayload');
   }
 }
 
@@ -383,13 +465,18 @@ form?.addEventListener('submit', async (event) => {
 
   resultBox.classList.remove('hidden');
   resultBox.className = 'result';
-  resultBox.innerHTML = "Generating commits... <span class='progress'>0/" + estimatedTotal + " · Estimating...</span>";
+  resultBox.innerHTML = "Creating commits... <span class='progress'>0/" + estimatedTotal + " &middot; Estimating...</span>";
 
   const progressTimer = setInterval(() => {
     completed = Math.min(completed + 1, estimatedTotal);
     const eta = estimateProgress(startedAt, estimatedTotal, completed);
+    let stage = "Creating commits...";
+    if (completed > estimatedTotal * 0.7) stage = "Pushing to GitHub...";
+    if (completed === estimatedTotal) stage = "Verifying remote commit...";
     const node = resultBox.querySelector(".progress");
-    if (node) node.textContent = `${completed}/${estimatedTotal} · ${eta}`;
+    if (node) {
+      resultBox.innerHTML = `${stage} <span class='progress'>${completed}/${estimatedTotal} &middot; ${eta}</span>`;
+    }
   }, 800);
 
   try {
