@@ -597,7 +597,7 @@ export default async function handler(req, res) {
       const accessToken = await exchangeCodeForToken(code);
       const user = await getGitHubUserFromToken(accessToken);
       setSessionCookie(res, user);
-      res.writeHead(302, { Location: '/' });
+      res.writeHead(302, { Location: '/extension/index.html' });
       res.end();
     } catch (error) {
       sendJson(res, 400, { success: false, message: error.message || 'GitHub login failed.' });

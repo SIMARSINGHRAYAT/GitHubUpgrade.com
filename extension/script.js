@@ -1,4 +1,7 @@
-const BASE_URL = 'https://app-commit-ten.vercel.app';
+const REMOTE_BASE_URL = 'https://app-commit-ten.vercel.app';
+const BASE_URL = window.location.protocol === 'file:' || window.location.origin.startsWith('chrome-extension:')
+  ? REMOTE_BASE_URL
+  : window.location.origin;
 
 // Intercept fetch calls to redirect /api to the remote Vercel backend
 const originalFetch = window.fetch;
