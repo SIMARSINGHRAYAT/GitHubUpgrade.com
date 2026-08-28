@@ -15,11 +15,8 @@ window.fetch = async function() {
   return originalFetch(resource, config);
 };
 
-const authPanel = document.getElementById("authPanel");
 const schedulerPanel = document.getElementById("schedulerPanel");
-const authStatus = document.getElementById("authStatus");
 const userSummary = document.getElementById("userSummary");
-const githubLoginBtn = document.getElementById("githubLoginBtn");
 const signOutBtn = document.getElementById("signOutBtn");
 const form = document.getElementById("commitForm");
 const resultBox = document.getElementById("result");
@@ -27,7 +24,7 @@ const filterMode = document.getElementById("filterMode");
 const selectedDaysPanel = document.getElementById("selectedDays");
 const repoOwnerInput = document.getElementById("repoOwner");
 const repoNameInput = document.getElementById("repoName");
-const submitBtn = form.querySelector("button[type='submit']");
+const submitBtn = form ? form.querySelector("button[type='submit']") : null;
 const randomizeInput = document.getElementById('randomize');
 
 let currentUser = null;
@@ -36,27 +33,15 @@ let userRepos = [];
 function setSignedOutState(message) {
   currentUser = null;
   userRepos = [];
-  document.body.classList.remove('dashboard-ready');
-  signOutBtn.style.display = 'none';
-  authPanel.classList.remove('hidden');
-  schedulerPanel.classList.add('hidden');
-  authStatus.textContent = message || 'Connect your GitHub account to continue.';
-  authStatus.classList.remove('success');
-  authStatus.classList.add('danger');
-  githubLoginBtn.disabled = false;
-  githubLoginBtn.textContent = 'Continue with GitHub';
+  window.location.replace('/auth.html');
 }
 
 function setSignedInState(user) {
   currentUser = user;
   signOutBtn.style.display = 'inline-flex';
   document.body.classList.add('dashboard-ready');
-  authPanel.classList.add('hidden');
   schedulerPanel.classList.remove('hidden');
   userSummary.textContent = user.login || 'GitHub account';
-  authStatus.textContent = 'GitHub account connected.';
-  authStatus.classList.remove('danger');
-  authStatus.classList.add('success');
 
   // Auto-fill repo owner from the authenticated user
   if (repoOwnerInput && !repoOwnerInput.value) {
@@ -100,10 +85,10 @@ if (repoNameInput && repoNameInput.tagName === 'SELECT') {
   });
 }
 
-function showInlineMessage(message, type = 'danger') {
-  authStatus.textContent = message;
-  authStatus.classList.toggle('success', type === 'success');
-  authStatus.classList.toggle('danger', type === 'danger');
+function showInlineMessage(message) {
+  resultBox.classList.remove('hidden');
+  resultBox.className = 'result result-error';
+  resultBox.textContent = message;
 }
 
 async function checkGitHubConfig() {
@@ -137,23 +122,14 @@ async function checkGitHubAuth() {
 async function initializeApp() {
   const config = await checkGitHubConfig();
   if (!config.configured) {
-    setSignedOutState('GitHub OAuth missing: ' + (config.missing.length ? config.missing.join(', ') : 'GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET'));
-    githubLoginBtn.disabled = true;
-    githubLoginBtn.textContent = 'Configuration needed';
+    setSignedOutState('GitHub OAuth is not configured.');
     return;
   }
 
   await checkGitHubAuth();
 }
 
-githubLoginBtn.addEventListener('click', () => {
-  if (githubLoginBtn.disabled) return;
-  // In extensions, we cannot redirect the popup to GitHub due to framing restrictions.
-  // We open the auth flow in a new tab instead.
-  window.open(BASE_URL + '/api/auth/login', '_blank');
-});
-
-signOutBtn.addEventListener('click', async () => {
+signOutBtn?.addEventListener('click', async () => {
   try {
     await fetch('/api/auth/logout');
     setSignedOutState('Signed out. Connect your GitHub account to continue.');
@@ -312,7 +288,7 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-form.addEventListener('submit', async (event) => {
+form?.addEventListener('submit', async (event) => {
   event.preventDefault();
 
   const weekdayInputs = document.querySelectorAll("[data-weekday]");

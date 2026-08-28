@@ -244,11 +244,7 @@ function resolveDailyCount(date, payload) {
   const safeDate = moment.isMoment(date) ? date : moment(date);
   const weekdayMap = payload.weekdayCounts || {};
   const weekdayKey = getDayName(safeDate);
-  const baseCount = Number(payload.dailyCount || 1);
-
-  if (payload.randomize) {
-    return Math.floor(Math.random() * 10) + 1;
-  }
+  const baseCount = Number(payload.dailyCount || 0);
 
   if (weekdayMap[weekdayKey] !== undefined && Number(weekdayMap[weekdayKey]) >= 0) {
     return Number(weekdayMap[weekdayKey]);
@@ -386,6 +382,15 @@ async function generateCommits(payload, req) {
 
   if (!startDate || !endDate) {
     throw new Error('Please choose a valid start date and end date.');
+  }
+
+  const weekdayCounts = payload.weekdayCounts || {};
+  const countValues = Object.values(weekdayCounts).map(Number);
+  if (countValues.length !== 7 || countValues.some((count) => !Number.isInteger(count) || count < 0)) {
+    throw new Error('Enter a whole-number commit count for every weekday.');
+  }
+  if (countValues.every((count) => count === 0)) {
+    throw new Error('At least one weekday must have a commit count greater than zero.');
   }
 
   // ── Validate repo & branch before starting ────────────────────────────
