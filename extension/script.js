@@ -262,6 +262,7 @@ function renderError(message) {
 }
 
 function renderSuccess(data) {
+  localStorage.setItem('githubUpgradeLastResult', JSON.stringify(data));
   resultBox.classList.remove('hidden');
   resultBox.className = 'result result-success';
   const pushNote = data.pushResult?.message || '';
@@ -300,6 +301,15 @@ function renderSuccess(data) {
       <p class="result-note"><i class="ph-bold ph-info"></i> ${escapeHtml(pushNote + verificationNote)}</p>
     </div>
   `;
+}
+
+function restoreLastResult() {
+  try {
+    const savedResult = localStorage.getItem('githubUpgradeLastResult');
+    if (savedResult) renderSuccess(JSON.parse(savedResult));
+  } catch {
+    localStorage.removeItem('githubUpgradeLastResult');
+  }
 }
 
 function escapeHtml(str) {
@@ -414,4 +424,6 @@ form?.addEventListener('submit', async (event) => {
   }
 });
 
-initializeApp();
+initializeApp().then(() => {
+  restoreLastResult();
+});
