@@ -62,7 +62,7 @@ async function fetchJson(url, init = {}) {
     ...init,
     headers: {
       Accept: 'application/json',
-      'User-Agent': 'GitHubUpgrade',
+      'User-Agent': 'GitHubBatches',
       ...(init.headers || {}),
     },
   });
@@ -401,6 +401,108 @@ async function verifyCreatedCommits(owner, repo, branch, login, startDate, endDa
   return verifiedCount;
 }
 
+// ─── Achievements / Badges Helpers ──────────────────────────────────────────
+
+async function createIssue(owner, repo, title, token) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/issues`;
+  const data = await fetchJson(url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ title, body: 'Automatically generated issue to unlock Quick Draw badge.' })
+  });
+  return data.number;
+}
+
+async function closeIssue(owner, repo, issueNumber, token) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`;
+  await fetchJson(url, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ state: 'closed' })
+  });
+}
+
+async function createPullRequest(owner, repo, head, base, title, token) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/pulls`;
+  const data = await fetchJson(url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ title, head, base, body: 'Automatically generated PR to unlock YOLO and Pull Shark badges.' })
+  });
+  return data.number;
+}
+
+async function mergePullRequest(owner, repo, pullNumber, token) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/merge`;
+  await fetchJson(url, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ merge_method: 'merge' })
+  });
+}
+
+async function unlockBadges(payload, req) {
+  const user = await getCurrentUser(req);
+  if (!user || !user.accessToken) throw new Error('GitHub sign-in is required.');
+
+  const { repoOwner, repoName } = payload;
+  const token = user.accessToken;
+
+  if (!repoOwner || !repoName) throw new Error('Repository owner and name are required.');
+
+  const repoCheck = await validateRepo(repoOwner, repoName, token);
+  if (!repoCheck.exists || !repoCheck.permissions.push) {
+    throw new Error(`Repository not found or no push access to ${repoOwner}/${repoName}.`);
+  }
+
+  const defaultBranch = repoCheck.defaultBranch || 'main';
+  const badgeBranch = `badge-unlock-${Date.now()}`;
+  const timestamp = new Date().toISOString();
+
+  // 1. Quick Draw (Create & Close Issue)
+  try {
+    const issueNum = await createIssue(repoOwner, repoName, `Unlock Quick Draw - ${timestamp}`, token);
+    await closeIssue(repoOwner, repoName, issueNum, token);
+  } catch (e) {
+    console.error('Quick Draw failed:', e.message);
+  }
+
+  // 2. Pair Extraordinaire, YOLO, Pull Shark
+  try {
+    const defaultRefSha = await getBranchRef(repoOwner, repoName, defaultBranch, token);
+    await fetchJson(`https://api.github.com/repos/${repoOwner}/${repoName}/git/refs`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ref: `refs/heads/${badgeBranch}`, sha: defaultRefSha })
+    });
+
+    const commitData = await getCommit(repoOwner, repoName, defaultRefSha, token);
+    const content = `Badge unlock trigger\n\nGenerated at ${timestamp}`;
+    const blobSha = await createBlob(repoOwner, repoName, content, token);
+    const treeSha = await createTree(repoOwner, repoName, commitData.tree.sha, 'badges.txt', blobSha, token);
+    
+    const message = `Unlock badges\n\nCo-authored-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>`;
+    const author = { name: user.login, email: user.email, date: timestamp };
+    const newCommitSha = await createGitCommit({
+      owner: repoOwner, repo: repoName, message, treeSha, parentSha: defaultRefSha, author, token
+    });
+
+    await updateBranchRef(repoOwner, repoName, badgeBranch, newCommitSha, token);
+    const prNum = await createPullRequest(repoOwner, repoName, badgeBranch, defaultBranch, `Unlock YOLO and Pull Shark - ${timestamp}`, token);
+    await mergePullRequest(repoOwner, repoName, prNum, token);
+
+    // Cleanup branch
+    await fetchJson(`https://api.github.com/repos/${repoOwner}/${repoName}/git/refs/heads/${badgeBranch}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  } catch (e) {
+    throw new Error('Failed to execute Pull Request sequence: ' + e.message);
+  }
+
+  return { success: true, message: 'All badges (Quick Draw, YOLO, Pull Shark, Pair Extraordinaire) have been successfully triggered.' };
+}
+
 // ─── Core commit generation ─────────────────────────────────────────────────
 
 async function generateCommits(payload, req) {
@@ -681,7 +783,7 @@ export default async function handler(req, res) {
       const accessToken = await exchangeCodeForToken(code);
       const user = await getGitHubUserFromToken(accessToken);
       setSessionCookie(res, user);
-      res.writeHead(302, { Location: '/social-actions.html' });
+      res.writeHead(302, { Location: '/instructions.html' });
       res.end();
     } catch (error) {
       sendJson(res, 400, { success: false, message: error.message || 'GitHub login failed.' });
@@ -858,6 +960,18 @@ export default async function handler(req, res) {
     } catch (error) {
       const statusCode = error.status || 400;
       sendJson(res, statusCode, { success: false, message: error.message || 'Failed to generate the commit schedule.' });
+    }
+    return;
+  }
+
+  if (req.method === 'POST' && normalizedPath === '/unlock-badges') {
+    try {
+      const payload = await parseBody(req);
+      const result = await unlockBadges(payload, req);
+      sendJson(res, 200, result);
+    } catch (error) {
+      const statusCode = error.status || 400;
+      sendJson(res, statusCode, { success: false, message: error.message || 'Failed to unlock badges.' });
     }
     return;
   }

@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="logo.png" alt="GitHubUpgrade Logo" width="250" />
+  <img src="logo.png" alt="GitHubBatches Logo" width="250" />
   
-  # 🚀 GitHubUpgrade
+  # 🚀 GitHubBatches
 
   **Take Complete Control of Your GitHub Contribution Graph**
 
@@ -12,24 +12,24 @@
   [![GitHub forks](https://img.shields.io/github/forks/SIMARSINGHRAYAT/APP_Commit?style=social)](https://github.com/SIMARSINGHRAYAT/APP_Commit/network/members)
   [![GitHub discussions](https://img.shields.io/github/discussions/SIMARSINGHRAYAT/APP_Commit)](https://github.com/SIMARSINGHRAYAT/APP_Commit/discussions)
 
-  *Tired of losing your GitHub streak because you worked on a private repository? Want to retroactively reflect your coding journey? GitHubUpgrade is the ultimate automation tool for curating your GitHub profile.*
+  *Tired of losing your GitHub streak because you worked on a private repository? Want to retroactively reflect your coding journey? GitHubBatches is the ultimate automation tool for curating your GitHub profile.*
 
   [**Get Started Now**](#-getting-started) • [**View Live App**](https://app-commit-ten.vercel.app/) • [**Join the Discussion**](https://github.com/SIMARSINGHRAYAT/APP_Commit/discussions)
 
   ---
   
-  **Spread the Word!** Share GitHubUpgrade with your network:
+  **Spread the Word!** Share GitHubBatches with your network:
   <br/>
-  <a href="https://twitter.com/intent/tweet?text=Check%20out%20GitHubUpgrade!%20Take%20complete%20control%20of%20your%20GitHub%20contribution%20graph.%20https://github.com/SIMARSINGHRAYAT/APP_Commit" target="_blank"><img src="https://img.shields.io/badge/Share-Twitter-1DA1F2?logo=twitter&logoColor=white" alt="Share on Twitter" /></a>
+  <a href="https://twitter.com/intent/tweet?text=Check%20out%20GitHubBatches!%20Take%20complete%20control%20of%20your%20GitHub%20contribution%20graph.%20https://github.com/SIMARSINGHRAYAT/APP_Commit" target="_blank"><img src="https://img.shields.io/badge/Share-Twitter-1DA1F2?logo=twitter&logoColor=white" alt="Share on Twitter" /></a>
   <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://github.com/SIMARSINGHRAYAT/APP_Commit" target="_blank"><img src="https://img.shields.io/badge/Share-LinkedIn-0A66C2?logo=linkedin&logoColor=white" alt="Share on LinkedIn" /></a>
   <a href="https://www.reddit.com/submit?url=https://github.com/SIMARSINGHRAYAT/APP_Commit&title=Take%20Complete%20Control%20of%20Your%20GitHub%20Contribution%20Graph" target="_blank"><img src="https://img.shields.io/badge/Share-Reddit-FF4500?logo=reddit&logoColor=white" alt="Share on Reddit" /></a>
 </div>
 
 <br />
 
-## 🌟 Why GitHubUpgrade?
+## 🌟 Why GitHubBatches?
 
-Your GitHub contribution graph is your developer resume. But sometimes, reality doesn't match the green squares. Whether you've been working on private enterprise code, taking a well-deserved break, or simply forgot to push your local commits, **GitHubUpgrade** lets you sculpt your graph exactly how you want it.
+Your GitHub contribution graph is your developer resume. But sometimes, reality doesn't match the green squares. Whether you've been working on private enterprise code, taking a well-deserved break, or simply forgot to push your local commits, **GitHubBatches** lets you sculpt your graph exactly how you want it.
 
 No more manual backdating, no more terminal hacks. Just a beautiful, intuitive interface to schedule, randomize, and automate your commits.
 
@@ -37,7 +37,7 @@ No more manual backdating, no more terminal hacks. Just a beautiful, intuitive i
 
 ## 💰 Support & Monetization
 
-If GitHubUpgrade has helped you secure a job, build your brand, or save time, please consider supporting the project! Your contributions help keep the servers running and fuel future development.
+If GitHubBatches has helped you secure a job, build your brand, or save time, please consider supporting the project! Your contributions help keep the servers running and fuel future development.
 
 - ☕ [**Buy Me a Coffee**](https://www.buymeacoffee.com/SIMARSINGHRAYAT)
 - ❤️ [**Sponsor on GitHub**](https://github.com/sponsors/SIMARSINGHRAYAT)
@@ -49,7 +49,7 @@ If GitHubUpgrade has helped you secure a job, build your brand, or save time, pl
 
 We are building a community of developers who care about their craft! 
 **[Join our GitHub Discussions](https://github.com/SIMARSINGHRAYAT/APP_Commit/discussions)** to:
-- 💡 Share how you use GitHubUpgrade
+- 💡 Share how you use GitHubBatches
 - 🛠️ Request new features
 - 🐛 Report bugs
 - 🤝 Network with other developers
@@ -77,7 +77,7 @@ It’s as simple as 1, 2, 3:
 
 ## 🛠️ Built With Modern Tech
 
-GitHubUpgrade is engineered for speed, reliability, and security:
+GitHubBatches is engineered for speed, reliability, and security:
 - **Serverless Backend:** Powered by Vercel serverless functions for instant execution.
 - **Direct GitHub Integration:** Utilizes the official GitHub REST API.
 - **Chrome Extension Ready:** Packaged for seamless browser integration.

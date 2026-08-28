@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "GitHubUpgrade",
+  "name": "GitHubBatches",
   "version": "1.0",
   "description": "GitHub contribution scheduler and automation tool.",
   "action": {
     "default_popup": "index.html",
-    "default_title": "Open GitHubUpgrade"
+    "default_title": "Open GitHubBatches"
   },
   "host_permissions": [
     "https://app-commit-ten.vercel.app/*",

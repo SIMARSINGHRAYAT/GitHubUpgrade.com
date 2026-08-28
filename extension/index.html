@@ -3,63 +3,44 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GitHubUpgrade | GitHub Contribution Scheduler</title>
-    <meta
-      name="description"
-      content="GitHubUpgrade contribution scheduler with secure OAuth and date-driven automation."
-    />
+    <title>Dashboard | GitHubBatches</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Modern Tech Fonts: Outfit for Display, Inter for UI -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <!-- Phosphor Icons for a clean, professional look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet" />
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="stylesheet" href="/extension/styles.css?v=2" />
+    <link rel="stylesheet" href="/extension/styles.css?v=4" />
   </head>
   <body>
-    <!-- Background elements for neon glow effects -->
-    <div class="glow-orb orb-primary"></div>
-    <div class="glow-orb orb-secondary"></div>
-    <div class="glow-orb orb-accent"></div>
     <div class="grid-overlay"></div>
-
+    
     <div class="page-shell">
       <header class="topbar glass-panel">
         <div class="brand-wrap">
-          <div>
-            <div class="brand-name">GitHubUpgrade.com</div>
-            <div class="brand-subtitle">GitHub Contribution Scheduler</div>
-          </div>
+          <h1 class="brand-name">GitHubBatches</h1>
         </div>
-        <button class="ghost-button" id="signOutBtn" type="button">
-          <i class="ph-bold ph-sign-out"></i> Sign out
-        </button>
+        <div class="user-info">
+          <span id="userSummary">GitHub account</span>
+          <button class="ghost-button" id="signOutBtn" type="button">
+            <i class="ph-bold ph-sign-out"></i>
+          </button>
+        </div>
       </header>
 
       <main class="app-grid">
-        <section class="panel scheduler-panel glass-panel hidden" id="schedulerPanel">
+        
+        <!-- Scheduler Section -->
+        <section class="panel scheduler-panel glass-panel" id="schedulerPanel">
           <div class="panel-header">
-            <div>
-              <div class="neon-eyebrow"><i class="ph-bold ph-user-circle"></i> Authenticated Identity</div>
-              <h2 id="userSummary">GitHub account</h2>
-            </div>
+            <h2><i class="ph-bold ph-calendar-plus"></i> Schedule Commits</h2>
             <span class="status-pill" id="connectionStatus">
               <span class="pulse-dot"></span> Connected
             </span>
           </div>
 
-            <p class="panel-copy">
-              Configure your automation parameters below. All operations execute directly on your GitHub repository.
-          </p>
-
           <form id="commitForm">
-            <div class="field-group-title"><i class="ph-bold ph-calendar-blank"></i> Timeframe</div>
             <div class="field-grid two-col">
               <label>
-                Start date
+                Start Date
                 <div class="input-wrap">
                   <i class="ph ph-calendar"></i>
                   <input type="date" id="startDate" required />
@@ -67,7 +48,7 @@
               </label>
 
               <label>
-                End date
+                End Date
                 <div class="input-wrap">
                   <i class="ph ph-calendar"></i>
                   <input type="date" id="endDate" required />
@@ -75,27 +56,12 @@
               </label>
             </div>
 
-            <div class="field-group-title"><i class="ph-bold ph-faders"></i> Custom Weekday Counts</div>
-            <div class="inner-panel">
-              <label class="compact-label">Commits generated for each weekday</label>
-              <div class="day-grid compact-inputs">
-                <div class="mini-input-group"><span>Mon</span><input type="number" min="0" step="1" value="5" data-weekday="monday" /></div>
-                <div class="mini-input-group"><span>Tue</span><input type="number" min="0" step="1" value="5" data-weekday="tuesday" /></div>
-                <div class="mini-input-group"><span>Wed</span><input type="number" min="0" step="1" value="5" data-weekday="wednesday" /></div>
-                <div class="mini-input-group"><span>Thu</span><input type="number" min="0" step="1" value="5" data-weekday="thursday" /></div>
-                <div class="mini-input-group"><span>Fri</span><input type="number" min="0" step="1" value="5" data-weekday="friday" /></div>
-                <div class="mini-input-group"><span>Sat</span><input type="number" min="0" step="1" value="5" data-weekday="saturday" /></div>
-                <div class="mini-input-group"><span>Sun</span><input type="number" min="0" step="1" value="5" data-weekday="sunday" /></div>
-              </div>
-            </div>
-
-            <div class="field-group-title"><i class="ph-bold ph-git-branch"></i> Target Repository</div>
             <div class="field-grid two-col">
               <label>
-                Repo owner
+                Repository Owner
                 <div class="input-wrap">
                   <i class="ph ph-user"></i>
-                  <input type="text" id="repoOwner" placeholder="your GitHub username" />
+                  <input type="text" id="repoOwner" placeholder="Username" required />
                 </div>
               </label>
 
@@ -104,52 +70,35 @@
                 <div class="input-wrap select-wrap">
                   <i class="ph ph-folder-notch"></i>
                   <select id="repoName" required>
-                    <option value="" disabled selected>Loading repositories...</option>
+                    <option value="" disabled selected>Loading...</option>
                   </select>
                   <i class="ph-bold ph-caret-down select-caret"></i>
                 </div>
               </label>
             </div>
-
-            <div class="field-group-title"><i class="ph-bold ph-faders"></i> Day Filters & Weights</div>
             
-            <div class="inner-panel">
-              <label class="compact-label">Filter Mode</label>
-              <div class="input-wrap select-wrap">
-                <i class="ph ph-funnel"></i>
-                <select id="filterMode">
-                  <option value="all">All days</option>
-                  <option value="odd">Odd days</option>
-                  <option value="even">Even days</option>
-                  <option value="weekends">Weekends only</option>
-                  <option value="weekdays">Weekdays only</option>
-                  <option value="selected">Selected weekdays</option>
-                </select>
-                <i class="ph-bold ph-caret-down select-caret"></i>
+            <label class="branch-label">
+              Target Branch
+              <div class="input-wrap">
+                <i class="ph ph-git-branch"></i>
+                <input type="text" id="branch" value="main" required />
               </div>
+            </label>
 
-              <div id="selectedDays" class="day-grid hidden">
-                <label class="check-box-label"><input type="checkbox" value="monday" checked /> Mon</label>
-                <label class="check-box-label"><input type="checkbox" value="tuesday" checked /> Tue</label>
-                <label class="check-box-label"><input type="checkbox" value="wednesday" checked /> Wed</label>
-                <label class="check-box-label"><input type="checkbox" value="thursday" checked /> Thu</label>
-                <label class="check-box-label"><input type="checkbox" value="friday" checked /> Fri</label>
-                <label class="check-box-label"><input type="checkbox" value="saturday" /> Sat</label>
-                <label class="check-box-label"><input type="checkbox" value="sunday" /> Sun</label>
+            <div class="weekday-counts-container">
+              <label>Commits per weekday</label>
+              <div class="day-grid">
+                <div class="mini-input"><span>M</span><input type="number" min="0" value="5" data-weekday="monday" /></div>
+                <div class="mini-input"><span>T</span><input type="number" min="0" value="5" data-weekday="tuesday" /></div>
+                <div class="mini-input"><span>W</span><input type="number" min="0" value="5" data-weekday="wednesday" /></div>
+                <div class="mini-input"><span>T</span><input type="number" min="0" value="5" data-weekday="thursday" /></div>
+                <div class="mini-input"><span>F</span><input type="number" min="0" value="5" data-weekday="friday" /></div>
+                <div class="mini-input"><span>S</span><input type="number" min="0" value="0" data-weekday="saturday" /></div>
+                <div class="mini-input"><span>S</span><input type="number" min="0" value="0" data-weekday="sunday" /></div>
               </div>
             </div>
 
-            <div class="field-group-title"><i class="ph-bold ph-rocket-launch"></i> Execution Details</div>
-
-            <div class="split-controls">
-              <label class="toggle-switch-label">
-                <div class="toggle-switch">
-                  <input type="checkbox" id="randomize" />
-                  <span class="slider"></span>
-                </div>
-                Randomize per day
-              </label>
-
+            <div class="toggles">
               <label class="toggle-switch-label">
                 <div class="toggle-switch">
                   <input type="checkbox" id="pushToRemote" checked />
@@ -157,34 +106,39 @@
                 </div>
                 Push to remote
               </label>
-              <span class="push-hint"><i class="ph-bold ph-info"></i> Uncheck for dry-run preview</span>
             </div>
 
-            <label class="branch-label">
-              Target Branch
-              <div class="input-wrap">
-                <i class="ph ph-git-commit"></i>
-                <input type="text" id="branch" value="main" />
-              </div>
-              <span class="push-hint warning-hint">
-                <i class="ph-bold ph-warning"></i> Note: Commits must be on the repository's default branch (e.g., main) to appear on your contribution graph.
-              </span>
-            </label>
-
-            <button type="submit" class="primary-button neon-button submit-button">
+            <button type="submit" class="primary-button neon-button submit-button" id="submitBtn">
               <i class="ph-bold ph-lightning"></i> Generate Schedule
             </button>
           </form>
 
           <div id="result" class="result hidden"></div>
         </section>
-      </main>
 
-      <footer class="page-foot">
-        <p><i class="ph-bold ph-terminal-window"></i> GitHubUpgrade • Contribution scheduler</p>
-      </footer>
+        <!-- Achievements Section -->
+        <section class="panel achievements-panel glass-panel">
+          <div class="panel-header">
+            <h2><i class="ph-bold ph-medal"></i> Unlock Badges</h2>
+          </div>
+          <p class="panel-copy">
+            Automatically unlock highly sought-after GitHub achievements like <strong>YOLO</strong>, <strong>Pull Shark</strong>, <strong>Pair Extraordinaire</strong>, and <strong>Quick Draw</strong>.
+          </p>
+          <div class="badges-preview">
+            <div class="badge-item"><span class="badge-icon">🦈</span> Pull Shark</div>
+            <div class="badge-item"><span class="badge-icon">😎</span> YOLO</div>
+            <div class="badge-item"><span class="badge-icon">🧑‍🤝‍🧑</span> Pair Extraordinaire</div>
+            <div class="badge-item"><span class="badge-icon">⚡</span> Quick Draw</div>
+          </div>
+          <button class="primary-button neon-button unlock-button" id="unlockBadgesBtn">
+            <i class="ph-bold ph-lock-key-open"></i> Unlock All Badges
+          </button>
+          <div id="badgesResult" class="result hidden"></div>
+        </section>
+
+      </main>
     </div>
 
-    <script src="/extension/script.js?v=3"></script>
+    <script src="/extension/script.js?v=4"></script>
   </body>
 </html>
