@@ -2,6 +2,553 @@
 
 :root {
   --bg-color: #000000;
+  --panel-bg: rgba(0, 0, 0, 0.98);
+  --panel-border: rgba(79, 143, 217, 0.15);
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --accent-color: #00e676;
+  --accent-hover: #00cc33;
+  --error-color: #ff3333;
+  --chrome-color: #4f8fd9;
+  --font-pixel: 'Press Start 2P', cursive;
+  --font-ui: 'Inter', sans-serif;
+}
+
+@keyframes fall {
+  from {
+    transform: translateY(-150px);
+    opacity: 0.15;
+  }
+  to {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+.github-icons-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.github-logo-fall {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-color);
+  opacity: 0.12;
+  animation: fall linear infinite;
+}
+
+.github-logo-fall svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.grid-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: 
+    linear-gradient(rgba(79, 143, 217, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 143, 217, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page-shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  margin: 0;
+  padding: 1.5rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  margin-bottom: 2rem;
+  border-radius: 2px;
+  border: 2px solid var(--panel-border);
+  background: var(--panel-bg);
+  flex-shrink: 0;
+}
+
+.brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.brand-name {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  font-family: var(--font-pixel);
+  margin: 0;
+}
+
+.brand-name .chrome {
+  color: var(--chrome-color);
+}
+
+.brand-name .green {
+  color: var(--accent-color);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 12px;
+  font-family: var(--font-pixel);
+}
+
+#userSummary {
+  color: var(--text-secondary);
+}
+
+.ghost-button {
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--accent-color);
+  background: transparent;
+  color: var(--accent-color);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-family: var(--font-pixel);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.ghost-button:hover {
+  background: rgba(0, 230, 118, 0.1);
+  transform: translateY(-1px);
+}
+
+.app-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.panel {
+  border-radius: 2px;
+  border: 2px solid var(--panel-border);
+  background: var(--panel-bg);
+  padding: 1.5rem;
+}
+
+.scheduler-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.panel-header h2 {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  font-family: var(--font-pixel);
+  margin: 0;
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 11px;
+  color: var(--accent-color);
+  font-family: var(--font-pixel);
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(0, 230, 118, 0.3);
+  border-radius: 2px;
+  background: rgba(0, 230, 118, 0.05);
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.field-grid.two-col {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.field-grid.full {
+  grid-template-columns: 1fr;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-family: var(--font-pixel);
+  color: var(--text-primary);
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrap input,
+.input-wrap select {
+  width: 100%;
+  padding: 0.75rem;
+  padding-left: 2.5rem;
+  border-radius: 2px;
+  border: 2px solid var(--panel-border);
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.input-wrap input:focus,
+.input-wrap select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  background: rgba(0, 0, 0, 0.9);
+  box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.1);
+}
+
+.calendar-icon {
+  position: absolute;
+  left: 0.75rem;
+  width: 18px;
+  height: 18px;
+  color: var(--accent-color);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.weekday-table-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.weekday-table-section > label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.day-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+}
+
+.mini-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mini-input > span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-family: var(--font-pixel);
+  color: var(--text-secondary);
+}
+
+.mini-input input {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 2px;
+  border: 2px solid var(--panel-border);
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.mini-input input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  background: rgba(0, 0, 0, 0.9);
+  box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.1);
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 2px;
+  border: 2px solid var(--panel-border);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.filter-section > label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.filter-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 0.75rem;
+}
+
+.filter-btn {
+  padding: 0.75rem;
+  border-radius: 2px;
+  border: 2px solid var(--panel-border);
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-family: var(--font-pixel);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  transform: translateY(-1px);
+}
+
+.filter-btn.active {
+  border-color: var(--accent-color);
+  background: rgba(0, 230, 118, 0.1);
+  color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.05);
+}
+
+.toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.toggle-switch-label {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-family: var(--font-pixel);
+  cursor: pointer;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 50px;
+  height: 28px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 14px;
+  border: 2px solid var(--panel-border);
+  transition: all 0.2s ease;
+}
+
+.toggle-switch input {
+  display: none;
+}
+
+.toggle-switch .slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  background: var(--text-secondary);
+  border-radius: 11px;
+  transition: all 0.2s ease;
+}
+
+.toggle-switch input:checked + .slider {
+  background: var(--accent-color);
+  left: 24px;
+}
+
+.toggle-switch:has(input:checked) {
+  border-color: var(--accent-color);
+  background: rgba(0, 230, 118, 0.05);
+}
+
+.primary-button {
+  padding: 1rem;
+  border-radius: 2px;
+  border: 2px solid var(--accent-color);
+  background: rgba(0, 230, 118, 0.15);
+  color: var(--accent-color);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-family: var(--font-pixel);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 1rem;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: rgba(0, 230, 118, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.1);
+}
+
+.primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.result {
+  padding: 1rem;
+  border-radius: 2px;
+  border: 2px solid var(--panel-border);
+  font-size: 12px;
+  line-height: 1.6;
+  font-family: var(--font-ui);
+}
+
+.result.hidden {
+  display: none;
+}
+
+.result-success {
+  border-color: var(--accent-color);
+  background: rgba(0, 230, 118, 0.05);
+  color: var(--accent-color);
+}
+
+.result-error {
+  border-color: var(--error-color);
+  background: rgba(255, 51, 51, 0.05);
+  color: var(--error-color);
+}
+
+.result strong {
+  font-weight: 700;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.result small {
+  display: block;
+  margin-top: 0.5rem;
+  opacity: 0.8;
+}
+
+@media (max-width: 900px) {
+  .field-grid.two-col {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .page-shell {
+    padding: 1rem;
+  }
+  
+  .topbar {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .user-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .panel {
+    padding: 1rem;
+  }
+  
+  .day-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .filter-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  --bg-color: #000000;
   --panel-bg: rgba(15, 15, 15, 0.95);
   --panel-border: rgba(0, 230, 118, 0.3);
   --text-primary: #ffffff;

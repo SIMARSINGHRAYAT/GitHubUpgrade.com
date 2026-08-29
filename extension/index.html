@@ -40,12 +40,24 @@
               <label>
                 START DATE
                 <div class="input-wrap">
+                  <svg class="calendar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
                   <input type="date" id="startDate" required />
                 </div>
               </label>
               <label>
                 END DATE
                 <div class="input-wrap">
+                  <svg class="calendar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
                   <input type="date" id="endDate" required />
                 </div>
               </label>
@@ -78,34 +90,34 @@
             </label>
 
             <!-- Filter Section -->
+            <!-- Weekday Table - Always Visible -->
+            <div class="weekday-table-section">
+              <label>COMMITS PER WEEKDAY</label>
+              <div class="day-grid">
+                <div class="mini-input"><span>MON</span><input type="number" min="0" max="50" value="5" data-weekday="monday" /></div>
+                <div class="mini-input"><span>TUE</span><input type="number" min="0" max="50" value="5" data-weekday="tuesday" /></div>
+                <div class="mini-input"><span>WED</span><input type="number" min="0" max="50" value="5" data-weekday="wednesday" /></div>
+                <div class="mini-input"><span>THU</span><input type="number" min="0" max="50" value="5" data-weekday="thursday" /></div>
+                <div class="mini-input"><span>FRI</span><input type="number" min="0" max="50" value="5" data-weekday="friday" /></div>
+                <div class="mini-input"><span>SAT</span><input type="number" min="0" max="50" value="0" data-weekday="saturday" /></div>
+                <div class="mini-input"><span>SUN</span><input type="number" min="0" max="50" value="0" data-weekday="sunday" /></div>
+              </div>
+            </div>
+
+            <!-- Filter Section -->
             <div class="filter-section">
-              <label>COMMIT FILTER MODE</label>
+              <label>QUICK FILTERS</label>
               <div class="filter-buttons">
                 <button type="button" class="filter-btn active" data-filter="all">ALL DAYS</button>
                 <button type="button" class="filter-btn" data-filter="even">EVEN DAYS</button>
                 <button type="button" class="filter-btn" data-filter="odd">ODD DAYS</button>
-                <button type="button" class="filter-btn" data-filter="custom">CUSTOM</button>
+                <button type="button" class="filter-btn" data-filter="custom">RANDOM</button>
               </div>
 
-              <!-- Min/Max/Random Options -->
-              <div id="filterOptions" class="filter-buttons">
-                <button type="button" class="filter-btn" data-option="min">MIN (1)</button>
+              <!-- Min/Max Options -->
+              <div id="filterOptions" class="filter-buttons" style="margin-top: 12px;">
+                <button type="button" class="filter-btn active" data-option="min">MIN (1)</button>
                 <button type="button" class="filter-btn" data-option="max">MAX (20)</button>
-                <button type="button" class="filter-btn" id="randomBtn" data-option="random" style="display:none;">RANDOM</button>
-              </div>
-            </div>
-
-            <!-- Custom Weekday Controls (shown when custom is selected) -->
-            <div id="customWeekdaySection" style="display:none;">
-              <label>COMMITS PER WEEKDAY</label>
-              <div class="day-grid">
-                <div class="mini-input"><span>M</span><input type="number" min="0" max="50" value="5" data-weekday="monday" /></div>
-                <div class="mini-input"><span>T</span><input type="number" min="0" max="50" value="5" data-weekday="tuesday" /></div>
-                <div class="mini-input"><span>W</span><input type="number" min="0" max="50" value="5" data-weekday="wednesday" /></div>
-                <div class="mini-input"><span>T</span><input type="number" min="0" max="50" value="5" data-weekday="thursday" /></div>
-                <div class="mini-input"><span>F</span><input type="number" min="0" max="50" value="5" data-weekday="friday" /></div>
-                <div class="mini-input"><span>S</span><input type="number" min="0" max="50" value="0" data-weekday="saturday" /></div>
-                <div class="mini-input"><span>S</span><input type="number" min="0" max="50" value="0" data-weekday="sunday" /></div>
               </div>
             </div>
 
@@ -136,18 +148,40 @@
     <script>
       function createFallingIcons() {
         const bg = document.getElementById('githubBg');
-        const iconCount = 15;
+        const iconCount = 12;
+        const positions = [];
+        
         for (let i = 0; i < iconCount; i++) {
-          const icon = document.createElement('div');
-          icon.className = 'github-icon-fall';
-          icon.textContent = '♦';
-          const xPos = Math.random() * 100;
-          const duration = 10 + Math.random() * 10;
-          const delay = Math.random() * 15;
-          icon.style.left = xPos + '%';
-          icon.style.animationDuration = duration + 's';
-          icon.style.animationDelay = delay + 's';
-          bg.appendChild(icon);
+          let xPos;
+          let attempts = 0;
+          let validPosition = false;
+          
+          while (!validPosition && attempts < 10) {
+            xPos = Math.random() * 100;
+            validPosition = true;
+            for (let pos of positions) {
+              if (Math.abs(xPos - pos) < 15) {
+                validPosition = false;
+                break;
+              }
+            }
+            attempts++;
+          }
+          
+          if (validPosition) {
+            positions.push(xPos);
+            const icon = document.createElement('div');
+            icon.className = 'github-logo-fall';
+            icon.innerHTML = `<svg viewBox="0 0 16 16" width="40" height="40" fill="currentColor">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+            </svg>`;
+            const duration = 5 + Math.random() * 8;
+            const delay = Math.random() * 12;
+            icon.style.left = xPos + '%';
+            icon.style.animationDuration = duration + 's';
+            icon.style.animationDelay = delay + 's';
+            bg.appendChild(icon);
+          }
         }
       }
       createFallingIcons();
