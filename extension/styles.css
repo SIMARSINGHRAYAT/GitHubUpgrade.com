@@ -283,28 +283,6 @@ input:checked + .slider:before { transform: translateX(20px); }
   transform: none;
 }
 
-.badges-preview {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.badge-item {
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid var(--panel-border);
-  padding: 1rem;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-.badge-icon {
-  font-size: 1.5rem;
-}
-
 .result {
   margin-top: 1.5rem;
   padding: 1rem;

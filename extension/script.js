@@ -22,8 +22,6 @@ const resultBox = document.getElementById("result");
 const repoOwnerInput = document.getElementById("repoOwner");
 const repoNameInput = document.getElementById("repoName");
 const submitBtn = document.getElementById("submitBtn");
-const unlockBadgesBtn = document.getElementById("unlockBadgesBtn");
-const badgesResult = document.getElementById("badgesResult");
 
 let currentUser = null;
 let userRepos = [];
@@ -128,45 +126,6 @@ function renderSuccess(data, box = resultBox) {
   box.classList.remove('hidden', 'result-error');
   box.classList.add('result-success');
   box.innerHTML = `<strong>Success!</strong> ${data.pushResult?.message || data.message || 'Action completed successfully.'}`;
-}
-
-// Unlock Badges Logic
-if (unlockBadgesBtn) {
-  unlockBadgesBtn.addEventListener('click', async () => {
-    const repoOwner = repoOwnerInput.value.trim();
-    const repoName = repoNameInput.value.trim();
-    
-    if (!repoOwner || !repoName) {
-      renderError('Please select a repository owner and name first in the scheduler section.', badgesResult);
-      return;
-    }
-
-    unlockBadgesBtn.disabled = true;
-    unlockBadgesBtn.innerHTML = '<i class="ph-bold ph-spinner" style="animation: spin 1s linear infinite;"></i> Unlocking...';
-    badgesResult.classList.remove('hidden', 'result-error', 'result-success');
-    badgesResult.innerHTML = 'Executing GitHub APIs... Please wait up to 30 seconds.';
-    badgesResult.style.display = 'block';
-
-    try {
-      const response = await fetch('/api/unlock-badges', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repoOwner, repoName })
-      });
-      const data = await response.json();
-      
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to unlock badges.');
-      }
-      
-      renderSuccess(data, badgesResult);
-    } catch (err) {
-      renderError(err.message, badgesResult);
-    } finally {
-      unlockBadgesBtn.disabled = false;
-      unlockBadgesBtn.innerHTML = '<i class="ph-bold ph-lock-key-open"></i> Unlock All Badges';
-    }
-  });
 }
 
 // Generate Commits Form
