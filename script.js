@@ -267,7 +267,7 @@ function renderSuccess(data) {
         <div class="stat"><span class="stat-label">Branch</span><span class="stat-value">${escapeHtml(data.branch)}</span></div>
         <div class="stat"><span class="stat-label">Commits</span><span class="stat-value">${data.commitsCreated}</span></div>
         <div class="stat"><span class="stat-label">Date range</span><span class="stat-value">${escapeHtml(data.startDate)} → ${escapeHtml(data.endDate)}</span></div>
-        <div class="stat"><span class="stat-label">Days</span><span class="stat-value">${data.selectedDays}</span></div>
+        <div class="stat"><span class="stat-label">Days</span><span class="stat-value">${escapeHtml(data.selectedDays)}</span></div>
         <div class="stat"><span class="stat-label">Pushed</span><span class="stat-value">${data.pushToRemote ? 'Yes' : 'Dry-run'}</span></div>
       </div>
       <p class="result-note"><i class="ph-bold ph-info"></i> ${escapeHtml(pushNote)}</p>
@@ -290,7 +290,10 @@ form.addEventListener('submit', async (event) => {
     weekdayCounts[input.dataset.weekday] = Number(input.value || 0);
   });
 
-  const selectedDays = Array.from(document.querySelectorAll("#selectedDays input:checked")).map((input) => input.value);
+  const VALID_WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const selectedDays = Array.from(document.querySelectorAll("#selectedDays input:checked"))
+    .map((input) => input.value)
+    .filter((day) => VALID_WEEKDAYS.includes(day));
 
   const repoOwner = repoOwnerInput.value.trim() || (currentUser ? currentUser.login : '');
   const repoName = repoNameInput.value.trim();
