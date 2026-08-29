@@ -34,19 +34,41 @@ function decodeSessionCookie(req) {
   try {
     const base64 = cookieValue.replace(/-/g, '+').replace(/_/g, '/');
     const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
-    return JSON.parse(Buffer.from(padded, 'base64').toString('utf8'));
+    const parsed = JSON.parse(Buffer.from(padded, 'base64').toString('utf8'));
+
+    if (!parsed || typeof parsed !== 'object' || !parsed.login || !parsed.accessToken) {
+      return null;
+    }
+
+    return parsed;
   } catch (error) {
     return null;
   }
 }
 
 function setSessionCookie(res, user) {
-  const session = Buffer.from(JSON.stringify(user)).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  const session = Buffer.from(JSON.stringify({
+    login: user.login,
+    id: user.id || null,
+    email: user.email || null,
+    accessToken: user.accessToken || null,
+    repoOwner: user.repoOwner || null,
+    repoName: user.repoName || null,
+    issuedAt: Date.now(),
+  })).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
   res.setHeader('Set-Cookie', `gh_session=${session}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=86400`);
 }
 
 function clearSessionCookie(res) {
   res.setHeader('Set-Cookie', 'gh_session=; Path=/; HttpOnly; SameSite=None; Secure; Max-Age=0');
+}
+
+function setOAuthStateCookie(res, state) {
+  res.setHeader('Set-Cookie', `gh_oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=600`);
+}
+
+function getOAuthStateCookie(req) {
+  return parseCookies(req).gh_oauth_state || null;
 }
 
 function resolveGitHubIdentity(user = {}, env = process.env) {
@@ -278,13 +300,16 @@ export default async function handler(req, res) {
       }
 
       const callbackUrl = `${baseUrl}/api/auth/callback`;
+      const state = `gh_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+      setOAuthStateCookie(res, state);
       const params = new URLSearchParams({
         client_id: clientId,
         redirect_uri: callbackUrl,
         scope: 'read:user user:email repo',
-        state: 'app-commit-auth',
+        state,
       });
 
+      console.log('[oauth] login requested', { callbackUrl, state });
       res.writeHead(302, {
         Location: `https://github.com/login/oauth/authorize?${params.toString()}`,
       });
@@ -296,13 +321,16 @@ export default async function handler(req, res) {
       const url = new URL(req.url || '/', `${baseUrl}`);
       const code = url.searchParams.get('code');
       const errorParam = url.searchParams.get('error');
+      const returnedState = url.searchParams.get('state');
+      const expectedState = getOAuthStateCookie(req);
 
       console.log('[oauth] callback received', {
         pathname,
         hasCode: Boolean(code),
         errorParam,
+        returnedState,
+        expectedState,
         host,
-        redirectTo: `${baseUrl}/api/auth/callback`,
       });
 
       if (errorParam) {
@@ -318,6 +346,15 @@ export default async function handler(req, res) {
         res.end();
         return;
       }
+
+      if (!expectedState || !returnedState || expectedState !== returnedState) {
+        console.error('[oauth] OAuth state mismatch or missing state cookie', { expectedState, returnedState });
+        res.writeHead(302, { Location: '/auth.html?error=' + encodeURIComponent('Invalid OAuth state. Please sign in again.') });
+        res.end();
+        return;
+      }
+
+      clearSessionCookie(res);
 
       let accessToken;
       try {
