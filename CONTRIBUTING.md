@@ -1,6 +1,6 @@
-# Contributing to GitHubBatches
+# Contributing to GitHubUpgrade.com
 
-First off, thank you for considering contributing to GitHubBatches! It's people like you that make GitHubBatches such a great tool for developers around the world.
+First off, thank you for considering contributing to GitHubUpgrade.com! It's people like you that make GitHubUpgrade.com such a great tool for developers around the world.
 
 ## Where do I go from here?
 
@@ -8,7 +8,7 @@ If you've noticed a bug or have a feature request, make one! It's generally best
 
 ## Fork & create a branch
 
-If this is something you think you can fix, then fork GitHubBatches and create a branch with a descriptive name.
+If this is something you think you can fix, then fork GitHubUpgrade.com and create a branch with a descriptive name.
 
 A good branch name would be (where issue #325 is the ticket you're working on):
 
@@ -29,7 +29,7 @@ At this point, you're ready to make your changes! Feel free to ask for help; eve
 
 ## Make a Pull Request
 
-At this point, you should switch back to your master branch and make sure it's up to date with GitHubBatches's master branch:
+At this point, you should switch back to your main branch and make sure it's up to date with GitHubUpgrade.com's main branch:
 
 ```
 git remote add upstream https://github.com/SIMARSINGHRAYAT/APP_Commit.git
@@ -37,7 +37,7 @@ git checkout main
 git pull upstream main
 ```
 
-Then update your feature branch from your local copy of master, and push it!
+Then update your feature branch from your local copy of main, and push it!
 
 ```
 git checkout 325-add-dark-mode
