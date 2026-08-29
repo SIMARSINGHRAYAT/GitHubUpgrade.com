@@ -25,5 +25,19 @@
         <a class="back-link" href="/">BACK TO WELCOME</a>
       </section>
     </main>
+    <script>
+      (async function redirectIfAlreadySignedIn() {
+        try {
+          const response = await fetch('/api/auth/status', { credentials: 'include' });
+          const data = await response.json();
+          if (response.ok && data && data.success) {
+            console.log('[auth-page] User already authenticated; redirecting to social step.');
+            window.location.replace('/social-actions.html');
+          }
+        } catch (error) {
+          console.warn('[auth-page] Not authenticated yet.', error);
+        }
+      })();
+    </script>
   </body>
 </html>

@@ -22,6 +22,20 @@
       </section>
     </main>
     <script>
+      (async function ensureAuthenticated() {
+        try {
+          const response = await fetch('/api/auth/status', { credentials: 'include' });
+          const data = await response.json();
+          if (!response.ok || !data || !data.success) {
+            console.warn('[social-actions] No valid auth session; redirecting to sign-in.');
+            window.location.replace('/auth.html');
+          }
+        } catch (error) {
+          console.error('[social-actions] Auth check failed.', error);
+          window.location.replace('/auth.html');
+        }
+      })();
+
       const completed = new Set();
       const status = document.getElementById('socialStatus');
       const continueButton = document.getElementById('continueBtn');

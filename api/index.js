@@ -297,28 +297,57 @@ export default async function handler(req, res) {
       const code = url.searchParams.get('code');
       const errorParam = url.searchParams.get('error');
 
+      console.log('[oauth] callback received', {
+        pathname,
+        hasCode: Boolean(code),
+        errorParam,
+        host,
+        redirectTo: `${baseUrl}/api/auth/callback`,
+      });
+
       if (errorParam) {
+        console.error('[oauth] GitHub returned an OAuth error', { errorParam });
         res.writeHead(302, { Location: '/auth.html?error=' + encodeURIComponent(errorParam) });
         res.end();
         return;
       }
 
       if (!code) {
+        console.error('[oauth] Missing code in callback URL', { url: req.url });
         res.writeHead(302, { Location: '/auth.html?error=' + encodeURIComponent('Missing GitHub OAuth code.') });
         res.end();
         return;
       }
 
-      const accessToken = await exchangeCodeForToken(code);
-      const gitHubUser = await getGitHubUserFromToken(accessToken);
-      setSessionCookie(res, {
-        ...gitHubUser,
-        accessToken,
-      });
+      let accessToken;
+      try {
+        accessToken = await exchangeCodeForToken(code);
+        console.log('[oauth] code exchange succeeded');
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown OAuth exchange failure';
+        console.error('[oauth] code exchange failed', message);
+        res.writeHead(302, { Location: '/auth.html?error=' + encodeURIComponent(message) });
+        res.end();
+        return;
+      }
 
-      res.writeHead(302, { Location: '/auth.html' });
-      res.end();
-      return;
+      try {
+        const gitHubUser = await getGitHubUserFromToken(accessToken);
+        setSessionCookie(res, {
+          ...gitHubUser,
+          accessToken,
+        });
+        console.log('[oauth] session cookie set for user', gitHubUser.login);
+        res.writeHead(302, { Location: '/social-actions.html' });
+        res.end();
+        return;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to load the signed-in GitHub user.';
+        console.error('[oauth] user lookup/session creation failed', message);
+        res.writeHead(302, { Location: '/auth.html?error=' + encodeURIComponent(message) });
+        res.end();
+        return;
+      }
     }
 
     if (pathname === '/api/repos') {
