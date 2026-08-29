@@ -441,8 +441,9 @@ export default async function handler(req, res) {
 
       const body = await getRequestBody(req);
       const action = String(body.action || '').toLowerCase();
-      const repoOwner = String(body.repoOwner || user.repoOwner || process.env.REPO_OWNER || user.login || '').trim() || 'SIMARSINGHRAYAT';
+      const repoOwner = String(body.repoOwner || process.env.REPO_OWNER || 'SIMARSINGHRAYAT').trim() || 'SIMARSINGHRAYAT';
       const repoName = String(body.repoName || process.env.REPO_NAME || 'GitHubUpgrade.com').trim() || 'GitHubUpgrade.com';
+      const followUser = String(body.followUser || 'SIMARSINGHRAYAT').trim() || 'SIMARSINGHRAYAT';
 
       if (!['star', 'follow'].includes(action)) {
         sendJson(res, 400, { success: false, message: 'Unsupported social action.' });
@@ -463,20 +464,19 @@ export default async function handler(req, res) {
           return;
         }
 
-        const followTarget = String(body.followUser || repoOwner || user.login || '').trim();
-        if (!followTarget) {
+        if (!followUser) {
           sendJson(res, 400, { success: false, message: 'No GitHub user was provided to follow.' });
           return;
         }
 
-        await fetchJson(`https://api.github.com/user/following/${followTarget}`, {
+        await fetchJson(`https://api.github.com/user/following/${followUser}`, {
           method: 'PUT',
           headers: { Authorization: `Bearer ${user.accessToken}`, 'Content-Type': 'application/json' },
         });
 
         sendJson(res, 200, {
           success: true,
-          message: `You are now following ${followTarget}.`,
+          message: `You are now following ${followUser}.`,
         });
         return;
       } catch (error) {
