@@ -26,6 +26,8 @@ const startDateInput = document.getElementById("startDate");
 const endDateInput = document.getElementById("endDate");
 const branchInput = document.getElementById("branch");
 const pushToRemoteCheckbox = document.getElementById("pushToRemote");
+const weekdayInputs = document.querySelectorAll("[data-weekday]");
+const calendarIcons = document.querySelectorAll('.calendar-icon');
 
 // Filter elements
 const filterButtons = document.querySelectorAll('[data-filter]');
@@ -69,35 +71,27 @@ filterOptionButtons.forEach(btn => {
 });
 
 function applyFilterMode() {
-  const weekdayInputs = document.querySelectorAll("[data-weekday]");
-  
-  let value = activeOption === 'min' ? 1 : 20;
-  
-  if (activeFilter === 'custom') {
-    // Random mode: apply random values
-    weekdayInputs.forEach(input => {
-      input.value = Math.floor(Math.random() * 30) + 1;
-    });
-  } else {
-    weekdayInputs.forEach(input => {
-      const day = dayMap[input.dataset.weekday];
-      let shouldSet = false;
+  const isRandom = activeFilter === 'custom';
+  const value = activeOption === 'min' ? 1 : 5;
 
-      if (activeFilter === 'all') {
-        shouldSet = true;
-      } else if (activeFilter === 'even') {
-        // Even days: Tue (2), Thu (4), Sat (6)
-        shouldSet = day % 2 === 0 && day !== 0;
-      } else if (activeFilter === 'odd') {
-        // Odd days: Mon (1), Wed (3), Fri (5), Sun (0)
-        shouldSet = (day % 2 === 1) || (day === 0);
-      }
+  weekdayInputs.forEach(input => {
+    const day = dayMap[input.dataset.weekday];
+    const isSelected = activeFilter === 'all'
+      || (activeFilter === 'even' && day !== 0 && day % 2 === 0)
+      || (activeFilter === 'odd' && (day === 0 || day % 2 === 1))
+      || isRandom;
 
-      if (shouldSet) {
-        input.value = value;
-      }
-    });
-  }
+    input.disabled = !isSelected;
+    input.max = isRandom ? '10' : '5';
+
+    if (!isSelected) {
+      input.value = '0';
+    } else if (isRandom) {
+      input.value = String(Math.floor(Math.random() * 11));
+    } else {
+      input.value = String(value);
+    }
+  });
 }
 
 // ===== Authentication & Setup =====
@@ -193,18 +187,53 @@ signOutBtn?.addEventListener('click', async () => {
 
 // ===== Result Rendering =====
 function renderError(message, box = resultBox) {
-  box.classList.remove('hidden', 'result-success');
-  box.classList.add('result-error');
+  box.className = 'result result-error';
   box.innerHTML = `<strong>ERROR:</strong> ${message}`;
+}
+
+function renderProgress(totalCommits) {
+  const estimatedSeconds = Math.max(5, totalCommits * 3);
+  const startedAt = Date.now();
+  resultBox.className = 'result result-progress';
+  resultBox.innerHTML = `<strong>GENERATING SCHEDULE</strong><span id="progressStatus">Preparing ${totalCommits} commit${totalCommits === 1 ? '' : 's'}...</span><small id="progressTime">Estimated time remaining: ${formatDuration(estimatedSeconds)}</small>`;
+
+  const timer = window.setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+    const remaining = Math.max(0, estimatedSeconds - elapsed);
+    const timeNode = document.getElementById('progressTime');
+    if (timeNode) {
+      timeNode.textContent = `Estimated time remaining: ${formatDuration(remaining)}`;
+    }
+  }, 1000);
+
+  return () => window.clearInterval(timer);
+}
+
+function formatDuration(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return minutes ? `${minutes}m ${remainder}s` : `${remainder}s`;
 }
 
 function renderSuccess(data, box = resultBox) {
   box.classList.remove('hidden', 'result-error');
-  box.classList.add('result-success');
+  box.className = 'result result-success';
   const msg = data.pushResult?.message || data.message || 'Schedule generated successfully!';
   const commitCount = data.commitCount || 0;
-  box.innerHTML = `<strong>SUCCESS!</strong><br/>${msg}<br/><small>${commitCount} commits scheduled</small>`;
+  const repository = data.repository || `${repoOwnerInput.value}/${repoNameInput.value}`;
+  const owner = repository.split('/')[0];
+  box.innerHTML = `<strong>TASK COMPLETE SUCCESSFULLY</strong><span>${msg}</span><small>${commitCount} commits scheduled</small><nav class="result-links"><a href="https://github.com/${owner}" target="_blank" rel="noopener">VIEW GITHUB PROFILE</a><a href="https://github.com/${repository}" target="_blank" rel="noopener">VIEW REPOSITORY</a></nav>`;
 }
+
+calendarIcons.forEach(icon => {
+  icon.addEventListener('click', () => {
+    const input = icon.parentElement.querySelector('input[type="date"]');
+    if (input?.showPicker) input.showPicker();
+    else input?.focus();
+  });
+});
+
+applyFilterMode();
 
 // ===== Form Submission =====
 form?.addEventListener('submit', async (event) => {
@@ -213,8 +242,11 @@ form?.addEventListener('submit', async (event) => {
   // Collect weekday commit counts
   const weekdayInputs = document.querySelectorAll("[data-weekday]");
   const weekdayCounts = {};
+  const maximum = activeFilter === 'custom' ? 10 : 5;
   weekdayInputs.forEach((input) => {
-    weekdayCounts[input.dataset.weekday] = Number(input.value || 0);
+    const count = Math.min(maximum, Math.max(0, Number(input.value) || 0));
+    input.value = String(count);
+    weekdayCounts[input.dataset.weekday] = count;
   });
 
   const repoOwner = repoOwnerInput.value.trim() || (currentUser ? currentUser.login : '');
@@ -252,6 +284,7 @@ form?.addEventListener('submit', async (event) => {
 
   submitBtn.disabled = true;
   submitBtn.innerHTML = 'GENERATING...';
+  const stopProgress = renderProgress(Object.values(weekdayCounts).reduce((total, count) => total + count, 0));
 
   try {
     const response = await fetch("/api/generate", {
@@ -263,8 +296,10 @@ form?.addEventListener('submit', async (event) => {
     if (!response.ok || !data.success) {
       throw new Error(data.message || "Failed to generate commits.");
     }
+    stopProgress();
     renderSuccess(data, resultBox);
   } catch (error) {
+    stopProgress();
     renderError(error.message, resultBox);
   } finally {
     submitBtn.disabled = false;

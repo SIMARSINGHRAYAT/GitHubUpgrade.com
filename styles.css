@@ -110,7 +110,7 @@ body {
 .welcome-content h1 span { color: var(--chrome); }
 .welcome-content h1 span.chrome { color: var(--chrome); }
 .welcome-content h1 span.green { color: var(--green); }
-.welcome-content h1 span.default { color: var(--white); }
+.welcome-content h1 span.default { color: var(--chrome); }
 
 .quote { 
   margin: 39px auto 0; 
@@ -255,6 +255,11 @@ body {
   .quote { margin-top: 30px; font-size: 11px; }
   .welcome-cta { margin-top: 38px; }
   .auth-card { padding: 32px 20px; }
+}
+
+body,
+body * {
+  font-family: var(--font-pixel);
 }
 
 .social-page { 
