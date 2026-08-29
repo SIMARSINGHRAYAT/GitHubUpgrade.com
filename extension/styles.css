@@ -145,7 +145,11 @@ label {
   color: var(--white); font-size: 14px; font-family: var(--font-ui); font-weight: 500;
   transition: all 0.3s ease;
 }
-.input-wrap input[type="date"] { padding-left: 2.8rem; }
+.input-wrap input[type="date"] { padding-left: 1rem; padding-right: 3rem; }
+.input-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute; right: 1rem; width: 24px; height: 24px;
+  opacity: 0; cursor: pointer; z-index: 2;
+}
 
 .input-wrap input:focus, .input-wrap select:focus {
   outline: none; border-color: var(--green); background: rgba(0,0,0,0.6);
@@ -153,8 +157,8 @@ label {
 }
 
 .calendar-icon {
-  position: absolute; left: 1rem; width: 18px; height: 18px;
-  color: var(--green); pointer-events: none;
+  position: absolute; left: auto; right: 1rem; width: 18px; height: 18px;
+  color: var(--green); pointer-events: none; z-index: 1;
 }
 
 /* Weekday Table */
