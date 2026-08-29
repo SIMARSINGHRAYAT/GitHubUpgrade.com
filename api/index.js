@@ -199,6 +199,162 @@ async function validateRepo(owner, repo, token) {
   }
 }
 
+async function generateCommits(payload, user) {
+  const startDate = new Date(payload.startDate);
+  const endDate = new Date(payload.endDate);
+  const repoOwner = (payload.repoOwner || user.login).trim();
+  const repoName = (payload.repoName || 'test-repo').trim();
+  const branch = (payload.branch || 'main').trim();
+  const pushToRemote = Boolean(payload.pushToRemote);
+  const weekdayCounts = payload.weekdayCounts || { monday: 5, tuesday: 5, wednesday: 5, thursday: 5, friday: 5, saturday: 0, sunday: 0 };
+
+  const weekdayMap = {
+    monday: 1, tuesday: 2, wednesday: 3, thursday: 4,
+    friday: 5, saturday: 6, sunday: 0,
+  };
+
+  // Validate repository access
+  const repoCheck = await validateRepo(repoOwner, repoName, user.accessToken);
+  if (!repoCheck.exists) {
+    const error = new Error(repoCheck.message);
+    error.status = 404;
+    throw error;
+  }
+
+  // Get the default branch if not specified
+  const targetBranch = branch || repoCheck.defaultBranch || 'main';
+
+  // Get current tree and latest commit
+  let latestCommitSha = null;
+  let baseTreeSha = null;
+
+  try {
+    const refData = await fetchJson(`https://api.github.com/repos/${repoOwner}/${repoName}/git/refs/heads/${targetBranch}`, {
+      headers: { Authorization: `Bearer ${user.accessToken}` },
+    });
+    latestCommitSha = refData.object.sha;
+
+    const commitData = await fetchJson(`https://api.github.com/repos/${repoOwner}/${repoName}/git/commits/${latestCommitSha}`, {
+      headers: { Authorization: `Bearer ${user.accessToken}` },
+    });
+    baseTreeSha = commitData.tree.sha;
+  } catch (error) {
+    if (error.status === 409) {
+      // Branch doesn't exist yet; create it from default_branch
+      const defaultRefData = await fetchJson(`https://api.github.com/repos/${repoOwner}/${repoName}/git/refs/heads/${repoCheck.defaultBranch}`, {
+        headers: { Authorization: `Bearer ${user.accessToken}` },
+      });
+      latestCommitSha = defaultRefData.object.sha;
+      const defaultCommitData = await fetchJson(`https://api.github.com/repos/${repoOwner}/${repoName}/git/commits/${latestCommitSha}`, {
+        headers: { Authorization: `Bearer ${user.accessToken}` },
+      });
+      baseTreeSha = defaultCommitData.tree.sha;
+    } else {
+      throw error;
+    }
+  }
+
+  // Generate commit schedule
+  const commits = [];
+  let currentDate = new Date(startDate);
+
+  while (currentDate <= endDate) {
+    const dayOfWeek = currentDate.getDay();
+    const dayName = Object.keys(weekdayMap).find(k => weekdayMap[k] === dayOfWeek);
+
+    if (dayName) {
+      const count = parseInt(weekdayCounts[dayName]) || 0;
+      for (let i = 0; i < count; i++) {
+        commits.push(new Date(currentDate));
+      }
+    }
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  let commitCount = 0;
+
+  // Create commits if any were scheduled
+  if (commits.length > 0) {
+    let currentSha = latestCommitSha;
+
+    for (let i = 0; i < commits.length; i++) {
+      const commitDate = commits[i];
+      const isoDate = commitDate.toISOString();
+
+      // Create blob for the commit
+      const blobData = await fetchJson(`https://api.github.com/repos/${repoOwner}/${repoName}/git/blobs`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${user.accessToken}` },
+        body: JSON.stringify({
+          content: `Commit ${i + 1} at ${isoDate}\n`,
+          encoding: 'utf-8',
+        }),
+      });
+
+      // Create tree with the new blob
+      const treeData = await fetchJson(`https://api.github.com/repos/${repoOwner}/${repoName}/git/trees`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${user.accessToken}` },
+        body: JSON.stringify({
+          base_tree: baseTreeSha,
+          tree: [{
+            path: `log_${i + 1}.txt`,
+            mode: '100644',
+            type: 'blob',
+            sha: blobData.sha,
+          }],
+        }),
+      });
+
+      // Create commit
+      const newCommit = await fetchJson(`https://api.github.com/repos/${repoOwner}/${repoName}/git/commits`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${user.accessToken}` },
+        body: JSON.stringify({
+          message: `Scheduled commit ${i + 1}`,
+          tree: treeData.sha,
+          parents: [currentSha],
+          author: {
+            name: user.login,
+            email: user.email,
+            date: isoDate,
+          },
+          committer: {
+            name: user.login,
+            email: user.email,
+            date: isoDate,
+          },
+        }),
+      });
+
+      currentSha = newCommit.sha;
+      commitCount++;
+    }
+
+    // Update branch reference
+    if (pushToRemote && currentSha !== latestCommitSha) {
+      await fetchJson(`https://api.github.com/repos/${repoOwner}/${repoName}/git/refs/heads/${targetBranch}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${user.accessToken}` },
+        body: JSON.stringify({ sha: currentSha, force: true }),
+      });
+    }
+  }
+
+  return {
+    message: `Successfully generated ${commitCount} commits.`,
+    pushResult: {
+      message: pushToRemote 
+        ? `Pushed ${commitCount} commits to ${repoOwner}/${repoName}:${targetBranch}`
+        : `Generated ${commitCount} commits locally (not pushed).`,
+    },
+    commitCount,
+    repository: `${repoOwner}/${repoName}`,
+    branch: targetBranch,
+    dateRange: `${startDate.toDateString()} to ${endDate.toDateString()}`,
+  };
+}
+
 async function getRequestBody(req) {
   if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
     return req.body;
@@ -522,10 +678,14 @@ export default async function handler(req, res) {
         return;
       }
 
-      sendJson(res, 501, {
-        success: false,
-        message: 'Commit generation is not enabled in this local build. Re-enable the generation backend in the deployed app to create commits.',
-      });
+      const body = await getRequestBody(req);
+      try {
+        const result = await generateCommits(body, user);
+        sendJson(res, 200, { success: true, ...result });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to generate commits.';
+        sendJson(res, error.status || 500, { success: false, message });
+      }
       return;
     }
 
