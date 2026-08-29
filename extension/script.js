@@ -29,6 +29,25 @@ const pushToRemoteCheckbox = document.getElementById("pushToRemote");
 const weekdayInputs = document.querySelectorAll("[data-weekday]");
 const calendarIcons = document.querySelectorAll('.calendar-icon');
 
+// Modals
+const summaryModal = document.getElementById("summaryModal");
+const summaryContent = document.getElementById("summaryContent");
+const editBtn = document.getElementById("editBtn");
+const confirmBtn = document.getElementById("confirmBtn");
+
+const progressModal = document.getElementById("progressModal");
+const progressTitle = document.getElementById("progressTitle");
+const progressRepo = document.getElementById("progressRepo");
+const progressBarFill = document.getElementById("progressBarFill");
+const progressText = document.getElementById("progressText");
+const progressStatusText = document.getElementById("progressStatusText");
+const progressEtaText = document.getElementById("progressEtaText");
+const progressActions = document.getElementById("progressActions");
+const viewRepoBtn = document.getElementById("viewRepoBtn");
+
+let currentPayload = null;
+let activePollInterval = null;
+
 // Filter elements
 const filterButtons = document.querySelectorAll('[data-filter]');
 const filterOptionButtons = document.querySelectorAll('[data-option]');
@@ -175,6 +194,11 @@ async function initializeApp() {
     return;
   }
   await checkGitHubAuth();
+
+  const savedJobId = localStorage.getItem('activeJobId');
+  if (savedJobId) {
+    resumeJob(savedJobId);
+  }
 }
 
 // ===== Sign Out =====
@@ -283,29 +307,138 @@ form?.addEventListener('submit', async (event) => {
   }
 
   submitBtn.disabled = true;
-  submitBtn.innerHTML = 'GENERATING...';
-  const stopProgress = renderProgress(Object.values(weekdayCounts).reduce((total, count) => total + count, 0));
+  submitBtn.innerHTML = 'CALCULATING...';
 
   try {
-    const response = await fetch("/api/generate", {
+    const response = await fetch("/api/calculate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
     const data = await response.json();
-    if (!response.ok || !data.success) {
-      throw new Error(data.message || "Failed to generate commits.");
+    if (!response.ok || !data.success) throw new Error(data.message || "Failed to calculate schedule.");
+    
+    currentPayload = payload;
+    let breakdownHtml = '';
+    for (const [day, count] of Object.entries(data.dailyBreakdown)) {
+      if (count > 0) breakdownHtml += `<span>${day.charAt(0).toUpperCase() + day.slice(1)}: ${count} days</span>`;
     }
-    stopProgress();
-    renderSuccess(data, resultBox);
+
+    let warningHtml = '';
+    if (data.totalCommits > 30) {
+      warningHtml = `<div class="warning-box"><strong>Large Schedule:</strong> You have scheduled more than 30 operations (${data.totalCommits}). This may take approximately an hour or longer to complete depending on GitHub API availability. Please keep this page open.</div>`;
+    } else {
+      warningHtml = `<div style="font-size:11px; margin-top:1rem; color:var(--green);">Your schedule contains 30 or fewer operations and can proceed normally.</div>`;
+    }
+
+    summaryContent.innerHTML = `
+      <div class="summary-grid">
+        <div class="summary-block"><span>Repository</span>${data.repository}</div>
+        <div class="summary-block"><span>Date Range</span>${data.dateRange}</div>
+        <div class="summary-block"><span>Eligible Days</span>${data.eligibleDays} days</div>
+        <div class="summary-block"><span>Total Commits</span>${data.totalCommits} operations</div>
+      </div>
+      <div class="summary-block">
+        <span>Daily Breakdown</span>
+        ${breakdownHtml}
+      </div>
+      ${warningHtml}
+    `;
+
+    summaryModal.classList.add('active');
   } catch (error) {
-    stopProgress();
     renderError(error.message, resultBox);
+    resultBox.classList.remove('hidden');
   } finally {
     submitBtn.disabled = false;
     submitBtn.innerHTML = 'GENERATE SCHEDULE';
   }
 });
+
+editBtn?.addEventListener('click', () => {
+  summaryModal.classList.remove('active');
+});
+
+confirmBtn?.addEventListener('click', async () => {
+  if (!currentPayload) return;
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'STARTING...';
+  
+  try {
+    const response = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(currentPayload),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.message || "Failed to start schedule.");
+    
+    summaryModal.classList.remove('active');
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'Confirm & Start';
+    
+    localStorage.setItem('activeJobId', data.jobId);
+    resumeJob(data.jobId);
+  } catch (error) {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'Confirm & Start';
+    alert(error.message);
+  }
+});
+
+function resumeJob(jobId) {
+  progressModal.classList.add('active');
+  progressActions.classList.add('hidden');
+  progressTitle.textContent = 'SCHEDULE IN PROGRESS';
+  progressStatusText.textContent = 'Running...';
+  
+  if (activePollInterval) clearInterval(activePollInterval);
+  activePollInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`/api/status?jobId=${jobId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.success || !data.job) return;
+      
+      const job = data.job;
+      progressRepo.textContent = job.repository;
+      
+      const percent = job.total > 0 ? Math.floor((job.completed / job.total) * 100) : 100;
+      progressBarFill.style.width = `${percent}%`;
+      progressText.textContent = `${job.completed} / ${job.total} (${percent}%)`;
+      
+      if (job.status === 'running') {
+        const elapsed = Math.floor((Date.now() - job.startTime) / 1000);
+        const avg = job.completed > 0 ? (elapsed / job.completed) : 2;
+        const remaining = Math.floor((job.total - job.completed) * avg);
+        progressEtaText.textContent = `~ ${formatDuration(remaining)}`;
+        progressStatusText.textContent = 'Processing scheduled operations...';
+      } else if (job.status === 'completed') {
+        clearInterval(activePollInterval);
+        localStorage.removeItem('activeJobId');
+        progressTitle.textContent = '✓ SCHEDULE COMPLETED';
+        progressStatusText.textContent = 'Successful';
+        progressStatusText.style.color = 'var(--green)';
+        progressEtaText.textContent = 'Completed';
+        
+        viewRepoBtn.href = `https://github.com/${job.repository}`;
+        progressActions.classList.remove('hidden');
+        // Simulate refreshing dashboard data
+        fetchRepos();
+      } else if (job.status === 'failed') {
+        clearInterval(activePollInterval);
+        localStorage.removeItem('activeJobId');
+        progressTitle.textContent = 'SCHEDULE FAILED';
+        progressStatusText.textContent = job.error || 'Execution paused/failed.';
+        progressStatusText.style.color = 'var(--error)';
+        progressEtaText.textContent = 'Halted';
+        progressActions.classList.remove('hidden');
+      }
+    } catch(e) {
+      console.warn("Polling error", e);
+    }
+  }, 1000);
+}
 
 // ===== Initialize App =====
 initializeApp();

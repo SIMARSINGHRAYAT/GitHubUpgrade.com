@@ -1,5 +1,7 @@
 import moment from 'moment';
 
+const activeJobs = new Map();
+
 function sendJson(res, statusCode, payload, extraHeaders = {}) {
   const origin = res.req?.headers?.origin || '*';
   res.writeHead(statusCode, {
@@ -254,9 +256,11 @@ async function generateCommits(payload, user) {
     }
   }
 
-  // Generate commit schedule
+  // Generate commit schedule dates
   const commits = [];
   let currentDate = new Date(startDate);
+  const eligibleDaysCount = { monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0, sunday: 0 };
+  let eligibleDays = 0;
 
   while (currentDate <= endDate) {
     const dayOfWeek = currentDate.getDay();
@@ -264,24 +268,36 @@ async function generateCommits(payload, user) {
 
     if (dayName) {
       const count = parseInt(weekdayCounts[dayName]) || 0;
-      for (let i = 0; i < count; i++) {
-        commits.push(new Date(currentDate));
+      if (count > 0) {
+        eligibleDays++;
+        eligibleDaysCount[dayName] = (eligibleDaysCount[dayName] || 0) + 1;
+        for (let i = 0; i < count; i++) {
+          commits.push(new Date(currentDate));
+        }
       }
     }
     currentDate.setDate(currentDate.getDate() + 1);
   }
 
-  let commitCount = 0;
+  return {
+    commits, eligibleDays, eligibleDaysCount,
+    repoOwner, repoName, targetBranch, pushToRemote,
+    latestCommitSha, baseTreeSha
+  };
+}
 
-  // Create commits if any were scheduled
-  if (commits.length > 0) {
-    let currentSha = latestCommitSha;
+async function executeJob(jobId, payload, user, scheduleInfo) {
+  const job = activeJobs.get(jobId);
+  if (!job) return;
+  const { commits, repoOwner, repoName, targetBranch, pushToRemote, baseTreeSha } = scheduleInfo;
+  let currentSha = scheduleInfo.latestCommitSha;
 
+  try {
     for (let i = 0; i < commits.length; i++) {
+      if (job.status !== 'running') break; // Job cancelled or failed
       const commitDate = commits[i];
       const isoDate = commitDate.toISOString();
 
-      // Create blob for the commit
       const blobData = await fetchJson(`https://api.github.com/repos/${repoOwner}/${repoName}/git/blobs`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${user.accessToken}` },
@@ -291,7 +307,6 @@ async function generateCommits(payload, user) {
         }),
       });
 
-      // Create tree with the new blob
       const treeData = await fetchJson(`https://api.github.com/repos/${repoOwner}/${repoName}/git/trees`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${user.accessToken}` },
@@ -306,7 +321,6 @@ async function generateCommits(payload, user) {
         }),
       });
 
-      // Create commit
       const newCommit = await fetchJson(`https://api.github.com/repos/${repoOwner}/${repoName}/git/commits`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${user.accessToken}` },
@@ -314,45 +328,38 @@ async function generateCommits(payload, user) {
           message: `Scheduled commit ${i + 1}`,
           tree: treeData.sha,
           parents: [currentSha],
-          author: {
-            name: user.login,
-            email: user.email,
-            date: isoDate,
-          },
-          committer: {
-            name: user.login,
-            email: user.email,
-            date: isoDate,
-          },
+          author: { name: user.login, email: user.email, date: isoDate },
+          committer: { name: user.login, email: user.email, date: isoDate },
         }),
       });
 
       currentSha = newCommit.sha;
-      commitCount++;
+      job.completed = i + 1;
     }
 
-    // Update branch reference
-    if (pushToRemote && currentSha !== latestCommitSha) {
+    if (job.status === 'running' && pushToRemote && currentSha !== scheduleInfo.latestCommitSha) {
       await fetchJson(`https://api.github.com/repos/${repoOwner}/${repoName}/git/refs/heads/${targetBranch}`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${user.accessToken}` },
         body: JSON.stringify({ sha: currentSha, force: true }),
       });
     }
-  }
 
-  return {
-    message: `Successfully generated ${commitCount} commits.`,
-    pushResult: {
-      message: pushToRemote 
-        ? `Pushed ${commitCount} commits to ${repoOwner}/${repoName}:${targetBranch}`
-        : `Generated ${commitCount} commits locally (not pushed).`,
-    },
-    commitCount,
-    repository: `${repoOwner}/${repoName}`,
-    branch: targetBranch,
-    dateRange: `${startDate.toDateString()} to ${endDate.toDateString()}`,
-  };
+    if (job.status === 'running') {
+      job.status = 'completed';
+      job.result = {
+        message: `Successfully generated ${job.completed} commits.`,
+        pushResult: {
+          message: pushToRemote 
+            ? `Pushed ${job.completed} commits to ${repoOwner}/${repoName}:${targetBranch}`
+            : `Generated ${job.completed} commits locally (not pushed).`,
+        },
+      };
+    }
+  } catch (error) {
+    job.status = 'failed';
+    job.error = error.message;
+  }
 }
 
 async function getRequestBody(req) {
@@ -671,6 +678,42 @@ export default async function handler(req, res) {
       }
     }
 
+    if (pathname === '/api/calculate') {
+      const user = await getCurrentUser(req);
+      if (!user || !user.accessToken) {
+        sendJson(res, 401, { success: false, message: 'GitHub sign-in is required.' });
+        return;
+      }
+      const body = await getRequestBody(req);
+      try {
+        const schedule = await generateCommits(body, user);
+        sendJson(res, 200, {
+          success: true,
+          repository: `${schedule.repoOwner}/${schedule.repoName}`,
+          dateRange: `${new Date(body.startDate).toDateString()} to ${new Date(body.endDate).toDateString()}`,
+          eligibleDays: schedule.eligibleDays,
+          totalCommits: schedule.commits.length,
+          dailyBreakdown: schedule.eligibleDaysCount,
+          estimatedSeconds: Math.max(5, schedule.commits.length * 2)
+        });
+      } catch (error) {
+        sendJson(res, error.status || 500, { success: false, message: error.message || 'Calculation failed' });
+      }
+      return;
+    }
+
+    if (pathname === '/api/status') {
+      const url = new URL(req.url || '/', `${baseUrl}`);
+      const jobId = url.searchParams.get('jobId');
+      const job = activeJobs.get(jobId);
+      if (!job) {
+        sendJson(res, 404, { success: false, message: 'Job not found.' });
+        return;
+      }
+      sendJson(res, 200, { success: true, job });
+      return;
+    }
+
     if (pathname === '/api/generate') {
       const user = await getCurrentUser(req);
       if (!user || !user.accessToken) {
@@ -680,8 +723,24 @@ export default async function handler(req, res) {
 
       const body = await getRequestBody(req);
       try {
-        const result = await generateCommits(body, user);
-        sendJson(res, 200, { success: true, ...result });
+        const schedule = await generateCommits(body, user);
+        const jobId = Date.now().toString() + Math.random().toString().slice(2,8);
+        activeJobs.set(jobId, {
+          id: jobId,
+          userLogin: user.login,
+          total: schedule.commits.length,
+          completed: 0,
+          failed: 0,
+          status: 'running',
+          repository: `${schedule.repoOwner}/${schedule.repoName}`,
+          dateRange: `${new Date(body.startDate).toDateString()} to ${new Date(body.endDate).toDateString()}`,
+          startTime: Date.now()
+        });
+        
+        // Execute background job
+        executeJob(jobId, body, user, schedule).catch(err => console.error("Job error", err));
+
+        sendJson(res, 200, { success: true, jobId, message: 'Job started.' });
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to generate commits.';
         sendJson(res, error.status || 500, { success: false, message });

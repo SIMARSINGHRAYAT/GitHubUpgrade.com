@@ -240,6 +240,45 @@ label {
 .result-links a { color: var(--chrome); font-family: var(--font-pixel); font-size: 9px; text-decoration: none; }
 .result-links a:hover { color: var(--white); text-shadow: 0 0 5px var(--chrome); }
 
+/* Review & Progress Modals */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+.modal-content {
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: 16px; padding: 2rem; max-width: 600px; width: 90%;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-title { font-family: var(--font-pixel); font-size: 14px; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
+.summary-block { margin-bottom: 1rem; font-size: 13px; color: var(--muted); }
+.summary-block span { display: block; font-weight: bold; color: var(--white); margin-bottom: 0.2rem; }
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+.warning-box { border: 1px solid var(--error); background: rgba(255,51,102,0.1); padding: 1rem; border-radius: 8px; margin-top: 1rem; color: var(--white); font-size: 12px; }
+.modal-actions { display: flex; gap: 1rem; margin-top: 2rem; }
+.modal-actions button { flex: 1; }
+
+.progress-bar-container {
+  width: 100%; height: 24px; background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 12px;
+  margin: 1.5rem 0; overflow: hidden; position: relative;
+}
+.progress-bar-fill {
+  height: 100%; background: var(--green); width: 0%;
+  transition: width 0.3s ease;
+}
+.progress-text {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-pixel); font-size: 9px; color: #fff;
+  text-shadow: 1px 1px 0 #000;
+}
+
+
 @media (max-width: 768px) {
   .field-grid.two-col { grid-template-columns: 1fr; }
   .day-grid { grid-template-columns: repeat(4, 1fr); }

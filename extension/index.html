@@ -144,7 +144,40 @@
       </main>
     </div>
 
-    <script src="/extension/script.js?v=5"></script>
+    <!-- Modals -->
+    <div class="modal-overlay" id="summaryModal">
+      <div class="modal-content">
+        <h3 class="modal-title">SCHEDULE SUMMARY</h3>
+        <div id="summaryContent"></div>
+        <div class="modal-actions">
+          <button type="button" class="ghost-button" id="editBtn">Back / Edit</button>
+          <button type="button" class="primary-button" id="confirmBtn" style="margin-top:0;">Confirm & Start</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="progressModal">
+      <div class="modal-content">
+        <h3 class="modal-title" id="progressTitle">SCHEDULE IN PROGRESS</h3>
+        <div class="summary-block">
+          <span id="progressRepo">Repository</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="progressBarFill"></div>
+          <div class="progress-text" id="progressText">0 / 0 (0%)</div>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-block"><span>Status</span><div id="progressStatusText">Running...</div></div>
+          <div class="summary-block"><span>Time Remaining</span><div id="progressEtaText">Calculating...</div></div>
+        </div>
+        <div class="modal-actions hidden" id="progressActions">
+          <button type="button" class="ghost-button" onclick="window.location.href='/extension/index.html'">Dashboard</button>
+          <a class="ghost-button" id="viewRepoBtn" target="_blank" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Repository</a>
+        </div>
+      </div>
+    </div>
+
+    <script src="/extension/script.js?v=6"></script>
     <script>
       function createFallingIcons() {
         const bg = document.getElementById('githubBg');
