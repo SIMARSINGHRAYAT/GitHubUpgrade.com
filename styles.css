@@ -1,13 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 :root {
-  --black: #000000;
+  --black: #050505;
   --white: #f1f4f8;
-  --green: #00e676;
+  --green: #00ff88;
+  --green-glow: rgba(0, 255, 136, 0.4);
   --chrome: #4f8fd9;
-  --muted: #d8dde5;
+  --muted: #a0aabf;
   --font-pixel: 'Press Start 2P', cursive;
   --font-ui: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --glass-bg: rgba(15, 15, 20, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
 }
 
 * { box-sizing: border-box; }
@@ -18,7 +21,7 @@ body {
   margin: 0;
   min-height: 100vh;
   overflow-x: hidden;
-  background: var(--black);
+  background: radial-gradient(circle at 50% 0%, #151520 0%, var(--black) 60%);
   color: var(--white);
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
@@ -29,11 +32,11 @@ body {
 /* Falling GitHub Icons Animation */
 @keyframes fall {
   from {
-    transform: translateY(-150px);
-    opacity: 0.15;
+    transform: translateY(-150px) rotate(0deg);
+    opacity: 0.2;
   }
   to {
-    transform: translateY(100vh);
+    transform: translateY(100vh) rotate(360deg);
     opacity: 0;
   }
 }
@@ -59,6 +62,7 @@ body {
   color: var(--green);
   opacity: 0.12;
   animation: fall linear infinite;
+  filter: drop-shadow(0 0 8px var(--green-glow));
 }
 
 .github-logo-fall svg {
@@ -87,13 +91,14 @@ body {
 }
 
 .eyebrow { 
-  margin: 0 0 42px; 
+  margin: 0 0 32px; 
   color: var(--green); 
   font-size: 14px; 
   font-weight: 700; 
-  letter-spacing: 2px; 
+  letter-spacing: 3px; 
   line-height: 1.4;
   font-family: var(--font-pixel);
+  text-shadow: 0 0 10px var(--green-glow);
 }
 
 .welcome-content h1 { 
@@ -105,11 +110,12 @@ body {
   line-height: 1.1;
   font-family: var(--font-pixel);
   word-break: break-word;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 
 .welcome-content h1 span { color: var(--chrome); }
 .welcome-content h1 span.chrome { color: var(--chrome); }
-.welcome-content h1 span.green { color: var(--green); }
+.welcome-content h1 span.green { color: var(--green); text-shadow: 0 0 15px var(--green-glow); }
 .welcome-content h1 span.default { color: var(--chrome); }
 
 .quote { 
@@ -120,152 +126,169 @@ body {
   font-weight: 400; 
   line-height: 1.5;
   font-family: var(--font-pixel);
+  opacity: 0.8;
 }
 
 .welcome-cta { 
   display: grid; 
   place-items: center; 
-  width: 180px; 
-  height: 50px; 
+  width: 200px; 
+  height: 54px; 
   margin: 45px auto 0; 
-  border-radius: 2px; 
-  background: #fff; 
+  border-radius: 8px; 
+  background: linear-gradient(135deg, var(--green), #00cc66); 
   color: #000; 
-  font-size: 10px; 
+  font-size: 11px; 
   font-weight: 700; 
   letter-spacing: 2px; 
   text-decoration: none; 
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: 0 8px 24px var(--green-glow);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   font-family: var(--font-pixel);
   border: none;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-cta::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  transition: all 0.5s ease;
+}
+
+.welcome-cta:hover::after {
+  left: 100%;
 }
 
 .welcome-cta:hover, .welcome-cta:focus-visible { 
-  transform: translateY(-2px); 
-  box-shadow: 0 6px 16px rgba(0, 230, 118, 0.4);
+  transform: translateY(-3px) scale(1.02); 
+  box-shadow: 0 12px 28px rgba(0, 255, 136, 0.6);
 }
 
-.auth-card { 
+.auth-card, .social-card { 
   width: min(420px, calc(100vw - 32px)); 
   min-height: 420px; 
   display: flex; 
   flex-direction: column; 
   align-items: center; 
   padding: 40px; 
-  border: 2px solid rgba(79, 143, 217, 0.2);
-  border-radius: 2px; 
-  background: rgba(0, 0, 0, 0.98); 
-  box-shadow: none;
-  transform: none;
+  border: 1px solid var(--glass-border);
+  border-radius: 16px; 
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
   position: relative;
   z-index: 2;
+  transition: transform 0.3s ease;
+}
+
+.auth-card:hover, .social-card:hover {
+  transform: translateY(-5px);
 }
 
 .key-box { 
-  width: 60px; 
-  height: 60px; 
+  width: 64px; 
+  height: 64px; 
   display: grid; 
   place-items: center; 
   flex: 0 0 auto; 
-  border: 2px solid rgba(0, 230, 118, 0.4);
-  border-radius: 2px; 
-  background: rgba(0, 0, 0, 0.5); 
+  border: 1px solid rgba(0, 255, 136, 0.4);
+  border-radius: 12px; 
+  background: rgba(0, 255, 136, 0.05);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
 }
 
 .key-box svg { 
-  width: 28px; 
-  height: 28px; 
+  width: 32px; 
+  height: 32px; 
   fill: none; 
   stroke: var(--green); 
   stroke-linecap: round; 
   stroke-linejoin: round; 
   stroke-width: 2;
+  filter: drop-shadow(0 0 4px var(--green));
 }
 
-.auth-card h1 { 
+.auth-card h1, .social-card h1 { 
   margin: 25px 0 0; 
   color: var(--white); 
-  font-size: 14px; 
+  font-size: 15px; 
   font-weight: 700; 
   letter-spacing: 2px; 
-  line-height: 1.2;
+  line-height: 1.4;
   font-family: var(--font-pixel);
+  text-align: center;
 }
 
-.auth-copy { 
+.auth-copy, .social-copy { 
   max-width: 340px; 
-  margin: 30px 0 0; 
-  color: #999; 
-  font-size: 11px; 
+  margin: 20px 0 0; 
+  color: var(--muted); 
+  font-size: 13px; 
   line-height: 1.6; 
   text-align: center;
   font-family: var(--font-ui);
 }
 
 .github-button { 
-  width: 340px; 
-  max-width: 100%; 
+  width: 100%; 
+  max-width: 340px; 
   height: 56px; 
   display: flex; 
   align-items: center; 
   justify-content: center; 
   gap: 12px; 
   margin-top: 30px; 
-  border-radius: 2px; 
-  background: #f8f9fa; 
-  color: #000; 
-  font-size: 10px; 
+  border-radius: 8px; 
+  background: #ffffff; 
+  color: #000000; 
+  font-size: 11px; 
   font-weight: 700; 
   letter-spacing: 1.5px; 
   text-decoration: none; 
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  transition: filter 0.18s ease, transform 0.18s ease;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
   border: none;
   cursor: pointer;
   font-family: var(--font-pixel);
 }
 
 .github-button:hover, .github-button:focus-visible { 
-  filter: brightness(1.08); 
   transform: translateY(-2px); 
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 24px rgba(255,255,255,0.15);
 }
 
-.github-icon { width: 18px; height: 18px; fill: #000; }
-.external-icon { width: 15px; height: 15px; fill: none; stroke: #000; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.github-icon { width: 20px; height: 20px; fill: #000; }
 
 .back-link { 
   margin-top: 30px; 
-  color: #666; 
-  font-size: 9px; 
+  color: var(--muted); 
+  font-size: 10px; 
   font-weight: 700; 
   letter-spacing: 1px; 
   text-decoration: none;
   font-family: var(--font-pixel);
+  transition: color 0.2s;
 }
 
-.back-link:hover, .back-link:focus-visible { color: #999; }
+.back-link:hover, .back-link:focus-visible { color: var(--white); }
 
 @media (max-width: 700px) {
   .welcome-content { margin-top: 0; }
-  .eyebrow { margin-bottom: 34px; font-size: 10px; }
+  .eyebrow { margin-bottom: 24px; font-size: 11px; }
   .welcome-content h1 { font-size: clamp(1.2rem, 8vw, 2.5rem); }
   .quote { margin-top: 30px; font-size: 11px; }
   .welcome-cta { margin-top: 38px; }
-  .auth-card { padding: 32px 20px; }
-}
-
-body,
-body * {
-  font-family: var(--font-pixel);
+  .auth-card, .social-card { padding: 32px 20px; }
 }
 
 .social-page { 
   position: relative;
   z-index: 1;
-  background: #000; 
 }
 
 .social-view { 
@@ -277,75 +300,62 @@ body * {
   z-index: 2;
 }
 
-.social-card { 
-  width: min(100%, 500px); 
-  padding: 40px; 
-  border: 2px solid rgba(79, 143, 217, 0.2);
-  border-radius: 2px; 
-  background: rgba(0, 0, 0, 0.98); 
-  box-shadow: none;
-}
-
 .social-eyebrow { 
   margin: 0 0 18px; 
   color: var(--green); 
-  font-size: 9px; 
+  font-size: 10px; 
   font-weight: 700; 
   letter-spacing: 2px;
   font-family: var(--font-pixel);
-}
-
-.social-card h1 { 
-  margin: 0; 
-  color: var(--white); 
-  font-size: 16px; 
-  line-height: 1.2;
-  font-family: var(--font-pixel);
-}
-
-.social-copy { 
-  margin: 14px 0 26px; 
-  color: #999; 
-  font-size: 12px; 
-  line-height: 1.6;
-  font-family: var(--font-ui);
+  text-shadow: 0 0 8px var(--green-glow);
 }
 
 .social-actions { 
   display: grid; 
-  gap: 12px; 
+  gap: 16px; 
+  width: 100%;
+  margin-top: 24px;
 }
 
 .social-action { 
   width: 100%; 
   display: grid; 
-  grid-template-columns: 28px 1fr 20px; 
+  grid-template-columns: 36px 1fr 24px; 
   align-items: center; 
-  gap: 12px; 
-  padding: 16px; 
-  border: 1px solid var(--green);
-  border-radius: 2px; 
-  background: rgba(0, 230, 118, 0.05); 
+  gap: 16px; 
+  padding: 16px 20px; 
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px; 
+  background: rgba(255,255,255,0.03); 
   color: var(--white); 
   text-align: left; 
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
 }
 
 .social-action:hover:not(:disabled) { 
-  background: rgba(0, 230, 118, 0.15);
-  box-shadow: 0 0 20px rgba(0, 230, 118, 0.3);
+  background: rgba(0, 255, 136, 0.08);
+  border-color: rgba(0, 255, 136, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 255, 136, 0.15);
+  transform: translateY(-2px);
 }
 
 .social-action:disabled { 
   cursor: default; 
-  opacity: 0.6;
+  opacity: 0.5;
+  background: rgba(0,0,0,0.2);
+}
+
+.social-action.completed {
+  border-color: var(--green);
+  background: rgba(0, 255, 136, 0.1);
+  opacity: 1;
 }
 
 .action-mark { 
-  color: var(--green); 
-  font-size: 20px; 
+  font-size: 24px; 
   text-align: center;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 
 .social-action strong, .social-action small { 
@@ -354,69 +364,73 @@ body * {
 }
 
 .social-action strong { 
-  font-size: 12px; 
-  font-weight: 700;
+  font-size: 14px; 
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .social-action small { 
-  margin-top: 3px; 
-  color: #666; 
-  font-size: 10px; 
+  margin-top: 4px; 
+  color: var(--muted); 
+  font-size: 12px; 
 }
 
 .action-state { 
   color: var(--green); 
-  font-size: 18px; 
+  font-size: 20px; 
   text-align: right;
+  font-weight: bold;
 }
 
 .social-status { 
   min-height: 20px; 
-  margin: 18px 0 12px; 
-  color: #666; 
-  font-size: 11px;
+  margin: 24px 0 16px; 
+  color: var(--muted); 
+  font-size: 12px;
   font-family: var(--font-ui);
+  text-align: center;
 }
 
 .continue-button { 
   width: 100%; 
-  height: 50px; 
-  border: 2px solid var(--green);
-  border-radius: 2px; 
-  background: rgba(0, 230, 118, 0.05); 
-  color: var(--white); 
+  height: 54px; 
+  border: 1px solid var(--green);
+  border-radius: 8px; 
+  background: rgba(0, 255, 136, 0.1); 
+  color: var(--green); 
   font-size: 11px; 
   font-weight: 700; 
-  letter-spacing: 1.5px; 
+  letter-spacing: 2px; 
   cursor: pointer;
   font-family: var(--font-pixel);
-  transition: all 0.2s;
+  transition: all 0.3s ease;
 }
 
 .continue-button:hover:not(:disabled) {
-  background: rgba(0, 230, 118, 0.15);
-  box-shadow: 0 0 20px rgba(0, 230, 118, 0.3);
+  background: var(--green);
+  color: #000;
+  box-shadow: 0 0 20px var(--green-glow);
+  transform: translateY(-2px);
 }
 
 .continue-button:disabled { 
+  border-color: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.3);
+  background: transparent;
   cursor: not-allowed; 
-  opacity: 0.5;
 }
 
 .social-back { 
   display: block; 
-  margin-top: 20px; 
-  color: #666; 
-  font-size: 9px; 
+  margin-top: 24px; 
+  color: var(--muted); 
+  font-size: 10px; 
   font-weight: 700; 
   letter-spacing: 1px; 
   text-align: center; 
   text-decoration: none;
   font-family: var(--font-pixel);
+  transition: color 0.2s;
 }
 
-.social-back:hover { color: #999; }
-
-@media (max-width: 520px) { 
-  .social-card { padding: 28px 20px; }
-}
+.social-back:hover { color: var(--white); }
