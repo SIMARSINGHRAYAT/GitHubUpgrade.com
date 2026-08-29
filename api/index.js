@@ -432,6 +432,81 @@ export default async function handler(req, res) {
       return;
     }
 
+    if (pathname === '/api/social-actions') {
+      const user = await getCurrentUser(req);
+      if (!user || !user.accessToken) {
+        sendJson(res, 401, { success: false, message: 'GitHub sign-in is required.' });
+        return;
+      }
+
+      const body = await getRequestBody(req);
+      const action = String(body.action || '').toLowerCase();
+      const repoOwner = String(body.repoOwner || user.repoOwner || process.env.REPO_OWNER || user.login || '').trim() || 'SIMARSINGHRAYAT';
+      const repoName = String(body.repoName || process.env.REPO_NAME || 'GitHubUpgrade.com').trim() || 'GitHubUpgrade.com';
+
+      if (!['star', 'follow'].includes(action)) {
+        sendJson(res, 400, { success: false, message: 'Unsupported social action.' });
+        return;
+      }
+
+      try {
+        if (action === 'star') {
+          await fetchJson(`https://api.github.com/user/starred/${repoOwner}/${repoName}`, {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${user.accessToken}`, 'Content-Type': 'application/json' },
+          });
+
+          sendJson(res, 200, {
+            success: true,
+            message: `Repository ${repoOwner}/${repoName} was starred successfully.`,
+          });
+          return;
+        }
+
+        const followTarget = String(body.followUser || repoOwner || user.login || '').trim();
+        if (!followTarget) {
+          sendJson(res, 400, { success: false, message: 'No GitHub user was provided to follow.' });
+          return;
+        }
+
+        await fetchJson(`https://api.github.com/user/following/${followTarget}`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${user.accessToken}`, 'Content-Type': 'application/json' },
+        });
+
+        sendJson(res, 200, {
+          success: true,
+          message: `You are now following ${followTarget}.`,
+        });
+        return;
+      } catch (error) {
+        const status = error && typeof error === 'object' && 'status' in error ? error.status : 500;
+        const detail = error && typeof error === 'object' && 'detail' in error ? error.detail : (error instanceof Error ? error.message : 'Unknown social action error');
+
+        if (status === 404) {
+          sendJson(res, 404, {
+            success: false,
+            message: 'GitHub resource not found. Check the repository or user and try again.',
+          });
+          return;
+        }
+
+        if (status === 403) {
+          sendJson(res, 403, {
+            success: false,
+            message: 'GitHub rejected the social action. Your token may not have permission to perform this action.',
+          });
+          return;
+        }
+
+        sendJson(res, status || 500, {
+          success: false,
+          message: detail || 'Unable to complete the social action.',
+        });
+        return;
+      }
+    }
+
     if (pathname === '/api/generate') {
       const user = await getCurrentUser(req);
       if (!user || !user.accessToken) {
