@@ -7,17 +7,37 @@
     <meta name="description" content="A better way to build your GitHub story." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/styles.css?v=2" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Press+Start+2P&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css?v=3" />
   </head>
   <body>
+    <div class="github-icons-bg" id="githubBg"></div>
     <main class="welcome-page">
       <section class="welcome-content" aria-labelledby="brand-heading">
         <p class="eyebrow">A BETTER WAY TO BUILD YOUR GITHUB STORY</p>
-        <h1 id="brand-heading"><span>GitHubUpgrade</span><em>.com</em></h1>
-        <p class="quote">Programs must be written for people to read, and only<br />incidentally for machines to execute.</p>
+        <h1 id="brand-heading"><span>GitHub</span>Upgrade<em>.com</em></h1>
+        <p class="quote">Programs must be written for people to read, and only incidentally for machines to execute.</p>
         <a class="welcome-cta" href="/auth.html">GET STARTED</a>
       </section>
     </main>
+    <script>
+      function createFallingIcons() {
+        const bg = document.getElementById('githubBg');
+        const iconCount = 20;
+        for (let i = 0; i < iconCount; i++) {
+          const icon = document.createElement('div');
+          icon.className = 'github-icon-fall';
+          icon.textContent = '♦';
+          const xPos = Math.random() * 100;
+          const duration = 8 + Math.random() * 8;
+          const delay = Math.random() * 10;
+          icon.style.left = xPos + '%';
+          icon.style.animationDuration = duration + 's';
+          icon.style.animationDelay = delay + 's';
+          bg.appendChild(icon);
+        }
+      }
+      createFallingIcons();
+    </script>
   </body>
 </html>

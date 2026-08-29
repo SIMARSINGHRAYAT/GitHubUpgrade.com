@@ -3,7 +3,6 @@ const BASE_URL = window.location.protocol === 'file:' || window.location.origin.
   ? REMOTE_BASE_URL
   : window.location.origin;
 
-// Intercept fetch calls to redirect /api to the remote Vercel backend
 const originalFetch = window.fetch;
 window.fetch = async function() {
   let [resource, config] = arguments;
@@ -15,6 +14,7 @@ window.fetch = async function() {
   return originalFetch(resource, config);
 };
 
+// DOM Elements
 const userSummary = document.getElementById("userSummary");
 const signOutBtn = document.getElementById("signOutBtn");
 const form = document.getElementById("commitForm");
@@ -23,8 +23,83 @@ const repoOwnerInput = document.getElementById("repoOwner");
 const repoNameInput = document.getElementById("repoName");
 const submitBtn = document.getElementById("submitBtn");
 
+// Filter elements
+const filterButtons = document.querySelectorAll('[data-filter]');
+const filterOptionButtons = document.querySelectorAll('[data-option]');
+const customWeekdaySection = document.getElementById('customWeekdaySection');
+const randomBtn = document.getElementById('randomBtn');
+
 let currentUser = null;
 let userRepos = [];
+let activeFilter = 'all';
+let activeOption = 'min';
+
+// Filter Logic
+filterButtons.forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    filterButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+
+    // Show/hide custom weekday section
+    if (activeFilter === 'custom') {
+      customWeekdaySection.style.display = 'block';
+      randomBtn.style.display = 'inline-block';
+    } else {
+      customWeekdaySection.style.display = 'none';
+      randomBtn.style.display = 'none';
+      applyFilterMode();
+    }
+  });
+});
+
+// Filter option buttons
+filterOptionButtons.forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (btn.dataset.option === 'random') {
+      applyRandomCounts();
+    } else {
+      filterOptionButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeOption = btn.dataset.option;
+      applyFilterMode();
+    }
+  });
+});
+
+function applyFilterMode() {
+  const weekdayInputs = document.querySelectorAll("[data-weekday]");
+  const monday = 1, tuesday = 2, wednesday = 3, thursday = 4, friday = 5, saturday = 6, sunday = 0;
+  const dayMap = { monday, tuesday, wednesday, thursday, friday, saturday, sunday };
+
+  let value = activeOption === 'min' ? 1 : 20;
+
+  weekdayInputs.forEach(input => {
+    const day = dayMap[input.dataset.weekday];
+    let shouldSet = false;
+
+    if (activeFilter === 'all') {
+      shouldSet = true;
+    } else if (activeFilter === 'even') {
+      shouldSet = day !== 0 && day % 2 === 0; // Tue, Thu, Sat
+    } else if (activeFilter === 'odd') {
+      shouldSet = day !== 0 && day % 2 === 1 || day === 0; // Mon, Wed, Fri, Sun
+    }
+
+    if (shouldSet) {
+      input.value = value;
+    }
+  });
+}
+
+function applyRandomCounts() {
+  const weekdayInputs = document.querySelectorAll("[data-weekday]");
+  weekdayInputs.forEach(input => {
+    input.value = Math.floor(Math.random() * 30) + 1;
+  });
+}
 
 function setSignedOutState(message) {
   currentUser = null;
@@ -36,7 +111,6 @@ function setSignedInState(user) {
   currentUser = user;
   if (repoOwnerInput && !repoOwnerInput.value) {
     repoOwnerInput.value = user.login || '';
-    repoOwnerInput.placeholder = user.login || 'your GitHub username';
   }
   userSummary.textContent = user.login || 'GitHub account';
   fetchRepos();
@@ -44,24 +118,24 @@ function setSignedInState(user) {
 
 async function fetchRepos() {
   if (!repoNameInput) return;
-  repoNameInput.innerHTML = '<option value="" disabled selected>Loading repositories...</option>';
+  repoNameInput.innerHTML = '<option value="" disabled selected>Loading...</option>';
   try {
     const response = await fetch('/api/repos');
     const data = await response.json();
     if (data.success && data.repos) {
       userRepos = data.repos;
-      repoNameInput.innerHTML = '<option value="" disabled selected>Select a repository</option>';
+      repoNameInput.innerHTML = '<option value="" disabled selected>Select repository</option>';
       userRepos.forEach(repo => {
         const option = document.createElement('option');
         option.value = repo.name;
-        option.textContent = repo.name + (repo.private ? ' (Private)' : '');
+        option.textContent = repo.name + (repo.private ? ' [Private]' : '');
         repoNameInput.appendChild(option);
       });
     } else {
-      repoNameInput.innerHTML = '<option value="" disabled selected>Failed to load repos</option>';
+      repoNameInput.innerHTML = '<option value="" disabled selected>Failed to load</option>';
     }
   } catch (err) {
-    repoNameInput.innerHTML = '<option value="" disabled selected>Error loading repos</option>';
+    repoNameInput.innerHTML = '<option value="" disabled selected>Error loading</option>';
   }
 }
 
@@ -78,10 +152,7 @@ async function checkGitHubConfig() {
   try {
     const response = await fetch('/api/auth/configured');
     const data = await response.json();
-    if (!response.ok || !data.success) {
-      return { configured: false, missing: [] };
-    }
-    return { configured: data.configured, missing: data.missing || [] };
+    return { configured: data.success && data.configured, missing: data.missing || [] };
   } catch {
     return { configured: false, missing: [] };
   }
@@ -98,6 +169,98 @@ async function checkGitHubAuth() {
   } catch (error) {
     setSignedOutState(error.message);
   }
+}
+
+async function initializeApp() {
+  const config = await checkGitHubConfig();
+  if (!config.configured) {
+    setSignedOutState('GitHub OAuth is not configured.');
+    return;
+  }
+  await checkGitHubAuth();
+}
+
+signOutBtn?.addEventListener('click', async () => {
+  try {
+    await fetch('/api/auth/logout');
+    setSignedOutState('Signed out.');
+  } catch {}
+});
+
+function renderError(message, box = resultBox) {
+  box.classList.remove('hidden', 'result-success');
+  box.classList.add('result-error');
+  box.innerHTML = `<strong>ERROR:</strong> ${message}`;
+}
+
+function renderSuccess(data, box = resultBox) {
+  box.classList.remove('hidden', 'result-error');
+  box.classList.add('result-success');
+  const msg = data.pushResult?.message || data.message || 'Schedule generated successfully!';
+  box.innerHTML = `<strong>SUCCESS!</strong><br/>${msg}<br/><small>${data.commitCount || 0} commits scheduled</small>`;
+}
+
+form?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  const weekdayInputs = document.querySelectorAll("[data-weekday]");
+  const weekdayCounts = {};
+  weekdayInputs.forEach((input) => {
+    weekdayCounts[input.dataset.weekday] = Number(input.value || 0);
+  });
+
+  const repoOwner = repoOwnerInput.value.trim() || (currentUser ? currentUser.login : '');
+  const repoName = repoNameInput.value.trim();
+  const pushToRemote = document.getElementById("pushToRemote").checked;
+
+  const payload = {
+    startDate: document.getElementById("startDate").value,
+    endDate: document.getElementById("endDate").value,
+    weekdayCounts,
+    branch: document.getElementById("branch").value,
+    pushToRemote,
+    repoOwner,
+    repoName,
+  };
+
+  if (!payload.startDate || !payload.endDate) {
+    renderError('Select both start and end dates.');
+    return;
+  }
+  if (!repoName) {
+    renderError('Select a repository.');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = 'GENERATING...';
+
+  try {
+    const response = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.message || "Failed to generate commits.");
+    renderSuccess(data, resultBox);
+  } catch (error) {
+    renderError(error.message, resultBox);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = 'GENERATE SCHEDULE';
+  }
+});
+
+// Add spin animation if not exists
+if (!document.getElementById('spinKeyframe')) {
+  const style = document.createElement('style');
+  style.id = 'spinKeyframe';
+  style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
+  document.head.appendChild(style);
+}
+
+initializeApp();
 }
 
 async function initializeApp() {

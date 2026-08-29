@@ -3,25 +3,46 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>One More Step | GitHubUpgrade.com</title>
+    <title>Support the Project | GitHubUpgrade.com</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Press+Start+2P&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css?v=3" />
   </head>
   <body class="social-page">
+    <div class="github-icons-bg" id="githubBg"></div>
     <main class="social-view">
       <section class="social-card" aria-labelledby="social-heading">
-        <p class="social-eyebrow">GITHUBUPGRADE.COM</p>
-        <h1 id="social-heading">Support the project</h1>
-        <p class="social-copy">Before entering the dashboard, choose whether you want to support the open-source project. Each action opens through your signed-in GitHub account.</p>
+        <p class="social-eyebrow">SUPPORT</p>
+        <h1 id="social-heading">Support the Project</h1>
+        <p class="social-copy">Help us grow the community! Star our repository and follow the maintainer to show your support.</p>
         <div class="social-actions">
-          <button class="social-action" type="button" data-action="star"><span class="action-mark">&#9733;</span><span><strong>Star the repository</strong><small id="starStatus">Optional project support</small></span><span class="action-state" aria-hidden="true">+</span></button>
-          <button class="social-action" type="button" data-action="follow"><span class="action-mark">@</span><span><strong>Follow the maintainer</strong><small id="followStatus">Optional profile support</small></span><span class="action-state" aria-hidden="true">+</span></button>
+          <button class="social-action" type="button" data-action="star"><span class="action-mark">⭐</span><span><strong>Star the repository</strong><small id="starStatus">Show appreciation</small></span><span class="action-state" aria-hidden="true">→</span></button>
+          <button class="social-action" type="button" data-action="follow"><span class="action-mark">👤</span><span><strong>Follow the maintainer</strong><small id="followStatus">Stay updated</small></span><span class="action-state" aria-hidden="true">→</span></button>
         </div>
         <p id="socialStatus" class="social-status" aria-live="polite"></p>
         <button id="continueBtn" class="continue-button" type="button" disabled>CONTINUE TO DASHBOARD</button>
-        <a class="social-back" href="/auth.html">BACK TO SIGN IN</a>
+        <a class="social-back" href="/auth.html">← SIGN OUT</a>
       </section>
     </main>
     <script>
+      function createFallingIcons() {
+        const bg = document.getElementById('githubBg');
+        const iconCount = 20;
+        for (let i = 0; i < iconCount; i++) {
+          const icon = document.createElement('div');
+          icon.className = 'github-icon-fall';
+          icon.textContent = '♦';
+          const xPos = Math.random() * 100;
+          const duration = 8 + Math.random() * 8;
+          const delay = Math.random() * 10;
+          icon.style.left = xPos + '%';
+          icon.style.animationDuration = duration + 's';
+          icon.style.animationDelay = delay + 's';
+          bg.appendChild(icon);
+        }
+      }
+
       (async function ensureAuthenticated() {
         try {
           const response = await fetch('/api/auth/status', { credentials: 'include' });
@@ -34,6 +55,7 @@
           console.error('[social-actions] Auth check failed.', error);
           window.location.replace('/auth.html');
         }
+        createFallingIcons();
       })();
 
       const completed = new Set();
@@ -51,10 +73,10 @@
             const data = await response.json();
             if (!response.ok || !data.success) throw new Error(data.message || 'GitHub could not complete this action.');
             completed.add(action);
-            document.getElementById(labels[action]).textContent = 'Completed on GitHub';
+            document.getElementById(labels[action]).textContent = 'Completed!';
             button.classList.add('completed');
             button.querySelector('.action-state').textContent = '✓';
-            status.textContent = completed.size === 2 ? 'Both actions are complete.' : 'One action is complete. Choose the other to continue.';
+            status.textContent = completed.size === 2 ? 'All actions complete! Ready to continue.' : '1 of 2 complete. Choose one more.';
             continueButton.disabled = completed.size !== 2;
           } catch (error) {
             button.disabled = false;
