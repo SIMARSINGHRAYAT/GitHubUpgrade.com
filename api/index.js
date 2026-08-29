@@ -469,6 +469,14 @@ export default async function handler(req, res) {
           return;
         }
 
+        if (followUser.toLowerCase() === String(user.login || '').toLowerCase()) {
+          sendJson(res, 200, {
+            success: true,
+            message: `You are the maintainer of ${followUser}, so no follow action is required.`,
+          });
+          return;
+        }
+
         await fetchJson(`https://api.github.com/user/following/${followUser}`, {
           method: 'PUT',
           headers: { Authorization: `Bearer ${user.accessToken}`, 'Content-Type': 'application/json' },
