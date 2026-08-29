@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard | GitHubBatches</title>
+    <title>Dashboard | GitHubUpgrade.com</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet" />
@@ -16,7 +16,7 @@
     <div class="page-shell">
       <header class="topbar glass-panel">
         <div class="brand-wrap">
-          <h1 class="brand-name">GitHubBatches</h1>
+          <h1 class="brand-name">GitHubUpgrade</h1>
         </div>
         <div class="user-info">
           <span id="userSummary">GitHub account</span>
@@ -88,57 +88,3 @@
             <div class="weekday-counts-container">
               <label>Commits per weekday</label>
               <div class="day-grid">
-                <div class="mini-input"><span>M</span><input type="number" min="0" value="5" data-weekday="monday" /></div>
-                <div class="mini-input"><span>T</span><input type="number" min="0" value="5" data-weekday="tuesday" /></div>
-                <div class="mini-input"><span>W</span><input type="number" min="0" value="5" data-weekday="wednesday" /></div>
-                <div class="mini-input"><span>T</span><input type="number" min="0" value="5" data-weekday="thursday" /></div>
-                <div class="mini-input"><span>F</span><input type="number" min="0" value="5" data-weekday="friday" /></div>
-                <div class="mini-input"><span>S</span><input type="number" min="0" value="0" data-weekday="saturday" /></div>
-                <div class="mini-input"><span>S</span><input type="number" min="0" value="0" data-weekday="sunday" /></div>
-              </div>
-            </div>
-
-            <div class="toggles">
-              <label class="toggle-switch-label">
-                <div class="toggle-switch">
-                  <input type="checkbox" id="pushToRemote" checked />
-                  <span class="slider"></span>
-                </div>
-                Push to remote
-              </label>
-            </div>
-
-            <button type="submit" class="primary-button neon-button submit-button" id="submitBtn">
-              <i class="ph-bold ph-lightning"></i> Generate Schedule
-            </button>
-          </form>
-
-          <div id="result" class="result hidden"></div>
-        </section>
-
-        <!-- Achievements Section -->
-        <section class="panel achievements-panel glass-panel">
-          <div class="panel-header">
-            <h2><i class="ph-bold ph-medal"></i> Unlock Badges</h2>
-          </div>
-          <p class="panel-copy">
-            Automatically unlock highly sought-after GitHub achievements like <strong>YOLO</strong>, <strong>Pull Shark</strong>, <strong>Pair Extraordinaire</strong>, and <strong>Quick Draw</strong>.
-          </p>
-          <div class="badges-preview">
-            <div class="badge-item"><span class="badge-icon">🦈</span> Pull Shark</div>
-            <div class="badge-item"><span class="badge-icon">😎</span> YOLO</div>
-            <div class="badge-item"><span class="badge-icon">🧑‍🤝‍🧑</span> Pair Extraordinaire</div>
-            <div class="badge-item"><span class="badge-icon">⚡</span> Quick Draw</div>
-          </div>
-          <button class="primary-button neon-button unlock-button" id="unlockBadgesBtn">
-            <i class="ph-bold ph-lock-key-open"></i> Unlock All Badges
-          </button>
-          <div id="badgesResult" class="result hidden"></div>
-        </section>
-
-      </main>
-    </div>
-
-    <script src="/extension/script.js?v=4"></script>
-  </body>
-</html>
