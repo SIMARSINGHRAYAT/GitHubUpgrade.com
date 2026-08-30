@@ -100,7 +100,9 @@
             continueButton.disabled = completed.size !== 2;
           } catch (error) {
             button.disabled = false;
-            status.textContent = error.message;
+            status.textContent = error.message.includes('follow permission') || error.message.includes('re-authorize')
+              ? `${error.message} Please sign out and sign in again.`
+              : error.message;
           }
         });
       });

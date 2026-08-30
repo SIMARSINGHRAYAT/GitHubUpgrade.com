@@ -669,11 +669,14 @@ export default async function handler(req, res) {
       } catch (error) {
         const status = error && typeof error === 'object' && 'status' in error ? error.status : 500;
         const detail = error && typeof error === 'object' && 'detail' in error ? error.detail : (error instanceof Error ? error.message : 'Unknown social action error');
+        const lowerDetail = String(detail || '').toLowerCase();
 
         if (status === 404) {
           sendJson(res, 404, {
             success: false,
-            message: 'GitHub resource not found. Check the repository or user and try again.',
+            message: lowerDetail.includes('following') || lowerDetail.includes('user')
+              ? 'GitHub user not found or follow access is missing. Please confirm the profile is valid and sign out/in to re-authorize the app.'
+              : 'GitHub resource not found. Check the repository or user and try again.',
           });
           return;
         }
@@ -681,7 +684,9 @@ export default async function handler(req, res) {
         if (status === 403) {
           sendJson(res, 403, {
             success: false,
-            message: 'GitHub rejected the social action. Your token may not have permission to perform this action.',
+            message: lowerDetail.includes('follow') || lowerDetail.includes('scope') || lowerDetail.includes('permission')
+              ? 'GitHub follow permission is missing. Please sign out and sign in again to approve the required access.'
+              : 'GitHub rejected the social action. Your token may not have permission to perform this action.',
           });
           return;
         }
