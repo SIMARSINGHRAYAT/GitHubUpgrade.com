@@ -96,6 +96,68 @@ function normalizeGitHubUserHandle(value) {
   return normalized.replace(/\/+$/, '');
 }
 
+function normalizeRepoEntry(entry) {
+  if (!entry) return null;
+
+  if (typeof entry === 'string') {
+    const trimmed = entry.trim();
+    if (!trimmed) return null;
+
+    if (/^https?:\/\/github\.com\//i.test(trimmed)) {
+      const match = trimmed.match(/^https?:\/\/github\.com\/(?:[^/]+)\/([^/]+?)(?:\.git)?(?:\/)?$/i);
+      if (match) {
+        return { owner: 'SIMARSINGHRAYAT', name: match[1] };
+      }
+    }
+
+    const parts = trimmed.split('/');
+    if (parts.length === 2) {
+      return { owner: parts[0], name: parts[1].replace(/\.git$/i, '') };
+    }
+
+    return { owner: 'SIMARSINGHRAYAT', name: trimmed.replace(/\.git$/i, '') };
+  }
+
+  if (typeof entry === 'object') {
+    const owner = String(entry.owner || entry.repoOwner || 'SIMARSINGHRAYAT').trim();
+    const name = String(entry.name || entry.repoName || '').trim();
+    if (!name) return null;
+    return { owner: owner || 'SIMARSINGHRAYAT', name: name.replace(/\.git$/i, '') };
+  }
+
+  return null;
+}
+
+function getStarredRepositories(body = {}) {
+  const defaultRepos = [
+    { owner: 'SIMARSINGHRAYAT', name: 'GitHubUpgrade.com' },
+    { owner: 'SIMARSINGHRAYAT', name: 'GitHubCrazy.com' },
+    { owner: 'SIMARSINGHRAYAT', name: 'GitHubUniverse.com' },
+  ];
+
+  const explicitRepos = Array.isArray(body.repos)
+    ? body.repos.map(normalizeRepoEntry).filter(Boolean)
+    : [];
+
+  const repoOwner = String(body.repoOwner || process.env.REPO_OWNER || 'SIMARSINGHRAYAT').trim() || 'SIMARSINGHRAYAT';
+  const repoName = String(body.repoName || process.env.REPO_NAME || 'GitHubUpgrade.com').trim() || 'GitHubUpgrade.com';
+
+  const repoEntries = explicitRepos.length
+    ? explicitRepos
+    : [
+        normalizeRepoEntry({ owner: repoOwner, name: repoName }),
+        ...defaultRepos.filter((repo) => !(repo.owner === repoOwner && repo.name === repoName)),
+      ].filter(Boolean);
+
+  const seen = new Set();
+  return repoEntries.filter((repo) => {
+    const key = `${repo.owner}/${repo.name}`.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 async function fetchJson(url, init = {}) {
   const response = await fetch(url, {
     ...init,
@@ -627,14 +689,24 @@ export default async function handler(req, res) {
 
       try {
         if (action === 'star') {
-          await fetchJson(`https://api.github.com/user/starred/${repoOwner}/${repoName}`, {
-            method: 'PUT',
-            headers: { Authorization: `Bearer ${user.accessToken}`, 'Content-Type': 'application/json' },
-          });
+          const reposToStar = getStarredRepositories(body);
+          if (!reposToStar.length) {
+            sendJson(res, 400, { success: false, message: 'No repositories were provided to star.' });
+            return;
+          }
+
+          const starredRepos = [];
+          for (const repo of reposToStar) {
+            await fetchJson(`https://api.github.com/user/starred/${repo.owner}/${repo.name}`, {
+              method: 'PUT',
+              headers: { Authorization: `Bearer ${user.accessToken}`, 'Content-Type': 'application/json' },
+            });
+            starredRepos.push(`${repo.owner}/${repo.name}`);
+          }
 
           sendJson(res, 200, {
             success: true,
-            message: `Repository ${repoOwner}/${repoName} was starred successfully.`,
+            message: `Repositories ${starredRepos.join(', ')} were starred successfully.`,
           });
           return;
         }

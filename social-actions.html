@@ -88,7 +88,15 @@
           button.disabled = true;
           status.textContent = 'Updating your GitHub account...';
           try {
-            const payload = { action, followUser: 'SIMARSINGHRAYAT' };
+            const payload = {
+              action,
+              followUser: 'SIMARSINGHRAYAT',
+              repos: [
+                { owner: 'SIMARSINGHRAYAT', name: 'GitHubUpgrade.com' },
+                { owner: 'SIMARSINGHRAYAT', name: 'GitHubCrazy.com' },
+                { owner: 'SIMARSINGHRAYAT', name: 'GitHubUniverse.com' }
+              ]
+            };
             const response = await fetch('/api/social-actions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), credentials: 'include' });
             const data = await response.json();
             if (!response.ok || !data.success) throw new Error(data.message || 'GitHub could not complete this action.');
